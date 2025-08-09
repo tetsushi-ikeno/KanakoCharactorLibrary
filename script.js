@@ -1,107 +1,30 @@
-// ===== キャラデータ（直接埋め込み） =====
-const characters = [
-  {
-    id: "001",
-    name: "ニャニャパー",
-    series: "ねこニャ町",
-    image: "images/001.png",
-    profile: {
-      "住んでいるところ": "お城",
-      "好きなもの・こと": "天体観測",
-      "イメージカラー": "purple"
-    },
-    appearance: "王冠 コウモリの羽",
-    memo: "王冠の宝石はガーネット。友達とカフェに行くのがはやり。"
-  },
-  {
-    id: "002",
-    name: "ニャニャピー",
-    series: "ねこニャ町",
-    image: "images/002.png",
-    profile: {
-      "住んでいるところ": "お城",
-      "好きなもの・こと": "お絵描き",
-      "イメージカラー": "skyblue"
-    },
-    appearance: "ハートの王冠 トンボの羽",
-    memo: "エカキツコに絵を見てもらっている。王冠の宝石はトパーズ"
-  },
-  {
-    id: "004",
-    name: "チャチャスー",
-    series: "ねこニャ町",
-    image: "images/004.png",
-    profile: {
-      "住んでいるところ": "一軒家",
-      "好きなもの・こと": "料理",
-      "イメージカラー": "skyblue"
-    },
-    appearance: "コック帽・鳥の羽",
-    memo: "小さい子の扱いが得意"
-  },
-  {
-    id: "029",
-    name: "メイ",
-    series: "にじいろ学校",
-    image: "images/029.png",
-    profile: {
-      "住んでいるところ": "学校寮",
-      "好きなもの・こと": "-",
-      "イメージカラー": "-"
-    },
-    appearance: "-",
-    memo: "-"
-  },
-  {
-    id: "031",
-    name: "パレット",
-    series: "にじいろ学校",
-    image: "images/031.png",
-    profile: {
-      "住んでいるところ": "学校寮",
-      "好きなもの・こと": "-",
-      "イメージカラー": "-"
-    },
-    appearance: "-",
-    memo: "-"
-  },
-  {
-    id: "032",
-    name: "チョコ",
-    series: "にじいろ学校",
-    image: "images/032.png",
-    profile: {
-      "住んでいるところ": "学校寮",
-      "好きなもの・こと": "-",
-      "イメージカラー": "-"
-    },
-    appearance: "-",
-    memo: "-"
-  },
-  {
-    id: "036",
-    name: "シャワ・ワワー",
-    series: "ねこニャ町",
-    image: "images/036.png",
-    profile: {
-      "住んでいるところ": "川原",
-      "好きなもの・こと": "料理",
-      "イメージカラー": "blue"
-    },
-    appearance: "水のかんむり、ゴウカチョウチョの羽",
-    memo: "横にいるのは水の精霊、スイスイ"
-  }
-];
-// ===== グローバル変数 =====
+let characters = [];
+let filteredCharacters = [];
 let currentIndex = 0;
-let filteredCharacters = [...characters];
+let activeSeries = 'all';
+let keyword = '';
 
+async function loadData() {
+  try {
+    const res = await fetch('data/characters.json?v=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error(HTTPエラー: ${res.status});
+    }
+    characters = await res.json();
+    filteredCharacters = [...characters];
+    renderList(filteredCharacters);
+    wireHeaderHandlers(); // ヘッダーの検索/絞り込みを接続
+  } catch (e) {
+    console.error('JSONの読み込みに失敗しました:', e);
+    alert('データ読み込みエラー。JSONが存在するか、パスが正しいか確認してください。');
+  }
+}
 // ===== キャラ詳細表示処理 =====
 function loadCharacter(index = 0) {
   const data = filteredCharacters[index];
   if (!data) return;
 
-  document.getElementById('character-image').src = data.image;
+document.getElementById('character-image').src = data.image;
   document.getElementById('character-summary').innerHTML = `
     <p>No.${data.id}</p>
     <h2>${data.name}</h2>
@@ -135,7 +58,7 @@ function renderList(charactersToRender) {
         <h3>${chara.name}</h3>
         <p>${chara.series}</p>
       </div>
-    `;
+     `;
     card.addEventListener('click', () => {
       currentIndex = index;
       showDetail();
@@ -158,18 +81,44 @@ function showList() {
 
 // ===== イベント登録 =====
 document.addEventListener('DOMContentLoaded', () => {
-  renderList(filteredCharacters);  // 初期は一覧ビューを表示
-
-  // 戻るボタン
+  loadData();
   document.querySelector('.back-button').addEventListener('click', showList);
-
-  // ナビゲーションボタン
-  document.querySelector('.nav-button.next').addEventListener('click', () => {
-    currentIndex = (currentIndex + 1) % filteredCharacters.length;
-    loadCharacter(currentIndex);
-  });
-  document.querySelector('.nav-button.prev').addEventListener('click', () => {
-    currentIndex = (currentIndex - 1 + filteredCharacters.length) % filteredCharacters.length;
-    loadCharacter(currentIndex);
-  });
+  document.querySelector('.nav-button.next').addEventListener('click', showNext);
+  document.querySelector('.nav-button.prev').addEventListener('click', showPrev);
 });
+
+function applyFilters() {
+  const kw = keyword.trim().toLowerCase();
+  filteredCharacters = characters.filter(c =>
+    (activeSeries === 'all' || c.series === activeSeries) &&
+    (
+      kw === '' ||
+      c.name.toLowerCase().includes(kw) ||
+      c.series.toLowerCase().includes(kw) ||
+      (c.memo || '').toLowerCase().includes(kw)
+    )
+  );
+  renderList(filteredCharacters);
+}
+
+
+// ヘッダー（絞り込み・検索）にイベントを貼る
+function wireHeaderHandlers() {
+  // 絞り込み
+  const buttons = document.querySelectorAll('.filter-buttons button');
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeSeries = (btn.textContent === '全シリーズ') ? 'all' : btn.textContent;
+      applyFilters();
+    });
+  });
+
+  // 検索
+  document.querySelector('.search-box').addEventListener('input', (e) => {
+    keyword = e.target.value;
+    applyFilters();
+  });
+}
+;
