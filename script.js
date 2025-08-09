@@ -8,7 +8,7 @@ async function loadData() {
   try {
     const res = await fetch('data/characters.json?v=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) {
-      throw new Error(HTTPエラー: ${res.status});
+      throw new Error(`HTTPエラー: ${res.status}`);
     }
     characters = await res.json();
     filteredCharacters = [...characters];
