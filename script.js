@@ -101,7 +101,39 @@ function applyFilters() {
   renderList(filteredCharacters);
 }
 
+// ===== ナビゲーション（進む・戻る） =====
+function showNext() {
+  currentIndex = (currentIndex + 1) % filteredCharacters.length;
+  loadCharacter(currentIndex);
+}
 
+function showPrev() {
+  currentIndex = (currentIndex - 1 + filteredCharacters.length) % filteredCharacters.length;
+  loadCharacter(currentIndex);
+}
+
+// ===== 絞り込み =====
+function filterBySeries(series) {
+  if (series === 'all') {
+    filteredCharacters = [...characters];
+  } else {
+    filteredCharacters = characters.filter(chara => chara.series === series);
+  }
+  currentIndex = 0;
+  loadCharacter(currentIndex);
+}
+
+// ===== 検索 =====
+function searchCharacter(keyword) {
+  keyword = keyword.trim().toLowerCase();
+  filteredCharacters = characters.filter(chara =>
+    chara.name.toLowerCase().includes(keyword) ||
+    chara.series.toLowerCase().includes(keyword) ||
+    chara.memo.toLowerCase().includes(keyword)
+  );
+  currentIndex = 0;
+  loadCharacter(currentIndex);
+}
 // ヘッダー（絞り込み・検索）にイベントを貼る
 function wireHeaderHandlers() {
   // 絞り込み
