@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>キャラ図鑑</title>
+  <!-- キャッシュ回避用のバージョンパラメータを付与 -->
+  <link rel="stylesheet" href="style.css?v=20250720">
+</head>
+<body>
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-left">
+        <h1>キャラ図鑑</h1>
+        <div class="filter-buttons">
+          <button class="active">全シリーズ</button>
+          <button>ねこニャ町</button>
+          <button>四角丸町</button>
+          <button>にじいろ学校</button>
+        </div>
+      </div>
+      <div class="header-right">
+        <input type="text" class="search-box" placeholder="キーワード検索...">
+      </div>
+    </div>
+  </header>
+
+<!-- 一覧ビュー -->
+<section id="list-view">
+  <div class="list-container" id="list-container">
+    <!-- JSで一覧カードを生成 -->
+  </div>
+</section>
+
+
+  <!-- 詳細ビュー -->
+  <section id="detail-view" class="hidden">
+    <!-- 上段 -->
+    <section class="section-top">
+      <button class="nav-button prev">←</button>
+      <div class="grid-container">
+        <div class="grid-item image-box">
+          <img id="character-image" src="" alt="キャラ画像">
+        </div>
+        <div class="grid-item summary-card" id="character-summary">
+          <!-- JSで詳細情報を挿入 -->
+        </div>
+      </div>
+      <button class="nav-button next">→</button>
+    </section>
+
+    <!-- 中段 -->
+    <section class="section-middle">
+      <div class="grid-container">
+        <div class="grid-item" id="profile"></div>
+        <div class="grid-item" id="appearance"></div>
+      </div>
+    </section>
+
+    <!-- 下段 -->
+    <section class="section-bottom">
+      <div class="grid-container">
+        <div class="memo-card" id="memo"></div>
+      </div>
+      <button class="back-button">← 一覧に戻る</button>
+    </section>
+  </section>
+
+  <script src="script.js"></script>
+</body>
