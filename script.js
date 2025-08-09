@@ -82,6 +82,8 @@ function showList() {
 // ===== イベント登録 =====
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  loadPalettes();
+
   document.querySelector('.back-button').addEventListener('click', showList);
   document.querySelector('.nav-button.next').addEventListener('click', showNext);
   document.querySelector('.nav-button.prev').addEventListener('click', showPrev);
@@ -133,6 +135,67 @@ function searchCharacter(keyword) {
   );
   currentIndex = 0;
   loadCharacter(currentIndex);
+}
+// ===== Palette (theme) =====
+async function loadPalettes() {
+  try {
+    const res = await fetch('data/palettes.json?v=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
+    const palettes = await res.json();
+    renderPaletteList(palettes);
+
+    // 保存済みの選択 or 先頭を適用
+    const savedKey = localStorage.getItem('theme.palette.key');
+    const initial = palettes.find(p => p.key === savedKey) || palettes[0];
+    applyPalette(initial);
+  } catch (e) {
+    console.error('パレットの読み込みに失敗しました:', e);
+    // JSONが読めない場合でもアプリ自体は動くようにする（デフォルトCSS変数が効く）
+  }
+}
+
+function applyPalette(palette) {
+  if (!palette) return;
+  const root = document.documentElement;
+  root.style.setProperty('--base-color',   palette.base);
+  root.style.setProperty('--accent-color', palette.accent);
+  root.style.setProperty('--sub-color',    palette.sub);
+  localStorage.setItem('theme.palette.key', palette.key);
+}
+
+function renderPaletteList(palettes) {
+  const panel = document.getElementById('palette-panel');
+  panel.innerHTML = '';
+
+  palettes.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'palette-item';
+    item.innerHTML = `
+      <div class="palette-name">${p.name}</div>
+      <div class="palette-bars" style="--base-color:${p.base};--accent-color:${p.accent};--sub-color:${p.sub}">
+        <span></span><span></span><span></span>
+      </div>
+    `;
+    item.addEventListener('click', () => {
+      applyPalette(p);
+      panel.hidden = true;
+    });
+    panel.appendChild(item);
+  });
+
+  // トグル動作
+  const btn = document.getElementById('palette-btn');
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    panel.hidden = !panel.hidden;
+  };
+
+  // パネル外クリックで閉じる
+  document.addEventListener('click', (e) => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== btn) {
+      panel.hidden = true;
+    }
+  });
 }
 // ヘッダー（絞り込み・検索）にイベントを貼る
 function wireHeaderHandlers() {
