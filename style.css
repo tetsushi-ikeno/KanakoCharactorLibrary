@@ -13,6 +13,9 @@ body {
 .header {
   background: var(--base-color); 
   color: #222;
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
 }
 
 /* 検索ボックスはヘッダー上でも視認しやすいように */
@@ -53,11 +56,7 @@ body {
 }
 
 /* ===== ヘッダー ===== */
-.header {
-  background: #fff;
-  border-bottom: 1px solid #eee;
-  padding: 10px 0;
-}
+
 
 .header-inner {
   max-width: 1200px;
