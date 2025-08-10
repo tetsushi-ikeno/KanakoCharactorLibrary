@@ -6,12 +6,12 @@
 }
 /* ページ背景をサブカラーに */
 body {
-  background: var(--color-sub);
+  background: var(--sub-color);
 }
 
 /* ヘッダーをベースカラーに（文字は少し濃いめに） */
 .header {
-  background: var(--color-base);
+  background: var(--base-color); 
   color: #222;
 }
 
@@ -22,14 +22,19 @@ body {
 
 /* フィルターボタン：通常は白＋アクセント枠、アクティブはアクセント塗り */
 .filter-buttons button {
-  color: var(--color-accent);
-  border-color: var(--color-accent);
-  background: #fff;
+   color: var(--accent-color); 
+   border-color: var(--accent-color); 
+   background:#fff; 
 }
-.filter-buttons button.active {
-  background: var(--color-accent);
-  color: #fff;
-  border-color: var(--color-accent);
+.filter-buttons button.active { 
+  background: var(--accent-color); 
+  color:#fff; 
+  border-color: var(--accent-color); 
+}
+
+.list-card:hover { 
+  transform: translateY(-5px);
+  background: color-mix(in srgb, var(--sub-color) 50%, #fff);
 }
 
 /* リストカードの hover をサブで薄くトーン変化（任意） */
@@ -334,4 +339,27 @@ h1 {
   h2, h3 {
     font-size: 1rem;
   }
+/* === THEME OVERRIDES (put at the very end) === */
+body{
+  background: var(--sub-color);
+}
+.header{
+  background: var(--base-color);
+  color: #222;
+}
+.filter-buttons button{
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+}
+.filter-buttons button.active{
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+.section-top{
+  background: var(--sub-color);
+}
+.list-card:hover{
+  background: color-mix(in srgb, var(--sub-color) 50%, #fff);
+}
 }
