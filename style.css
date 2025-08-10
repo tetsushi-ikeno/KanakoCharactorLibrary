@@ -4,6 +4,39 @@
   --accent-color:#6e6457; /* アクセント */
   --sub-color:   #cfdedf; /* サブ */
 }
+/* ページ背景をサブカラーに */
+body {
+  background: var(--color-sub);
+}
+
+/* ヘッダーをベースカラーに（文字は少し濃いめに） */
+.header {
+  background: var(--color-base);
+  color: #222;
+}
+
+/* 検索ボックスはヘッダー上でも視認しやすいように */
+.search-box {
+  background: #fff;
+}
+
+/* フィルターボタン：通常は白＋アクセント枠、アクティブはアクセント塗り */
+.filter-buttons button {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: #fff;
+}
+.filter-buttons button.active {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+
+/* リストカードの hover をサブで薄くトーン変化（任意） */
+.list-card:hover {
+  transform: translateY(-5px);
+  background: color-mix(in srgb, var(--color-sub) 50%, #fff);
+}
 
 
 /* ===== 全体設定 ===== */
