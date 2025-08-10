@@ -353,5 +353,46 @@ function colorOptions(selected){
                   "blue","navy","indigo","purple","violet","magenta","pink","brown","chocolate","sienna"];
   return colors.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('');
 }
+// ===== 編集モード（UIのみ） =====
+document.addEventListener('DOMContentLoaded', () => {
+  const EDIT_PASSWORD = 'kmk2525';
+  const editBtn   = document.getElementById('edit-btn');
+  const modal     = document.getElementById('pw-modal');
+  const pwInput   = document.getElementById('pw-input');
+  const okBtn     = document.getElementById('pw-submit');
+  const cancelBtn = document.getElementById('pw-cancel');
 
+  if (!editBtn) return; // ボタン未設置なら何もしない
+
+  const openModal = () => {
+    modal.hidden = false;
+    pwInput.value = '';
+    setTimeout(() => pwInput.focus(), 0);
+  };
+  const closeModal = () => { modal.hidden = true; };
+
+  // 鉛筆クリック -> モーダル
+  editBtn.addEventListener('click', openModal);
+
+  // OK：パスワード判定→editingトグル
+  okBtn.addEventListener('click', () => {
+    if (pwInput.value === EDIT_PASSWORD) {
+      document.body.classList.toggle('editing'); // UIフラグをON/OFF
+      closeModal();
+    } else {
+      pwInput.focus();
+      pwInput.select();
+      alert('パスワードが違います');
+    }
+  });
+
+  // キャンセル / オーバーレイクリック / ESCで閉じる
+  cancelBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (!modal.hidden && e.key === 'Escape') closeModal();
+  });
+});
 ;
