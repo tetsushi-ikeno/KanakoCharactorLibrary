@@ -5,5 +5,33 @@
     "base": "#a2997f",   
     "accent": "#6e6457", 
     "sub": "#cfdedf"     
+  },
+  {
+    "key": "tropical-resort",
+    "name": "南国鳥ピカルリゾート",
+    "base": "#9cd8f6",   
+    "accent": "#e95884", 
+    "sub": "#00b4b6"     
+  },
+  {
+    "key": "modern-art-gallery",
+    "name": "モダンアートギャラリー",
+    "base": "#8f7d6c",   
+    "accent": "#5a4c3f", 
+    "sub": "#b2a99d"     
+  },
+  {
+    "key": "vintage-library",
+    "name": "ヴィンテージライブラリー",
+    "base": "#bfae8f",   
+    "accent": "#7d6c5a", 
+    "sub": "#d0c9b2"     
+  },
+  {
+    "key": "rustic-garden",
+    "name": "ラスティックガーデン",
+    "base": "#8f7d6c",   
+    "accent": "#5a4c3f", 
+    "sub": "#b2a99d"     
   }
 ]

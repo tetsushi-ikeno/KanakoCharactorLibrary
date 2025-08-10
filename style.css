@@ -1,64 +1,32 @@
-/* ===== Theme palette (CSS variables) ===== */
-:root {
-  --base-color:  #a2997f; /* ベース */
-  --accent-color:#6e6457; /* アクセント */
-  --sub-color:   #cfdedf; /* サブ */
-}
-/* ページ背景をサブカラーに */
-body {
-  background: var(--sub-color);
+/* =======================
+   Theme palette (CSS variables)
+   ======================= */
+:root{
+  --base-color:   #a2997f; /* ベース */
+  --accent-color: #6e6457; /* アクセント */
+  --sub-color:    #cfdedf; /* サブ */
 }
 
-/* ヘッダーをベースカラーに（文字は少し濃いめに） */
-.header {
-  background: var(--base-color); 
+/* =======================
+   Global
+   ======================= */
+body{
+  margin: 0;
+  font-family: sans-serif;
+  color: #333;
+  background: var(--sub-color); /* ページ背景 = サブ */
+}
+
+/* =======================
+   Header
+   ======================= */
+.header{
+  background: var(--base-color); /* ヘッダー = ベース */
   color: #222;
   border-bottom: 1px solid #eee;
   padding: 10px 0;
 }
-}
-
-/* 検索ボックスはヘッダー上でも視認しやすいように */
-.search-box {
-  background: #fff;
-}
-
-/* フィルターボタン：通常は白＋アクセント枠、アクティブはアクセント塗り */
-.filter-buttons button {
-   color: var(--accent-color); 
-   border-color: var(--accent-color); 
-   background:#fff; 
-}
-.filter-buttons button.active { 
-  background: var(--accent-color); 
-  color:#fff; 
-  border-color: var(--accent-color); 
-}
-
-.list-card:hover { 
-  transform: translateY(-5px);
-  background: color-mix(in srgb, var(--sub-color) 50%, #fff);
-}
-
-/* リストカードの hover をサブで薄くトーン変化（任意） */
-.list-card:hover {
-  transform: translateY(-5px);
-  background: color-mix(in srgb, var(--color-sub) 50%, #fff);
-}
-
-
-/* ===== 全体設定 ===== */
-body {
-  margin: 0;
-  font-family: sans-serif;
-  color: #333;
-  background: #fff;
-}
-
-/* ===== ヘッダー ===== */
-
-
-.header-inner {
+.header-inner{
   max-width: 1200px;
   margin: 0 auto;
   display: flex;
@@ -66,66 +34,69 @@ body {
   align-items: center;
   padding: 0 20px;
 }
-
-.header-left {
+.header-left{
   display: flex;
   align-items: center;
   gap: 20px;
 }
-
-h1 {
+h1{
   font-size: 1.5rem;
   margin: 0;
 }
-
-.filter-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.filter-buttons button {
-  padding: 6px 14px;
-  border-radius: 20px;
-  border: 1px solid #ccc;
-  background: #fff;
-  cursor: pointer;
-}
-
-/* 既存差し替え：アクティブな絞り込みボタンにテーマ色を反映 */
-.filter-buttons button.active {
-  background: var(--accent-color);
-  color: #fff;
-  border-color: var(--accent-color);
-}
-
-.header-right {
+.header-right{
   display: flex;
   align-items: center;
 }
 
-.search-box {
+/* 検索ボックス */
+.search-box{
   padding: 6px 10px;
   border: 1px solid #ccc;
   border-radius: 20px;
   width: 200px;
   font-size: 1rem;
+  background: #fff;
 }
 
-/* ===== セクション背景 ===== */
-.section-top {
-  background: var(--sub-color);
+/* =======================
+   Filter buttons
+   ======================= */
+.filter-buttons{
+  display: flex;
+  gap: 8px;
+}
+.filter-buttons button{
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--accent-color);
+  background: #fff;
+  color: var(--accent-color);
+  cursor: pointer;
+}
+.filter-buttons button.active{
+  background: var(--accent-color);
+  color: #fff;
+  border-color: var(--accent-color);
+}
+
+/* =======================
+   Sections
+   ======================= */
+.section-top{
+  background: var(--sub-color); /* 上段の背景もサブ */
   padding: 20px 0;
   position: relative;
 }
-
 .section-middle,
-.section-bottom {
+.section-bottom{
   background: #fff;
   padding: 20px 0;
 }
 
-/* ===== ナビゲーションボタン ===== */
-.nav-button {
+/* =======================
+   Nav buttons
+   ======================= */
+.nav-button{
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -135,55 +106,49 @@ h1 {
   width: 40px;
   height: 40px;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+.nav-button.prev{ left: 20px; }
+.nav-button.next{ right: 20px; }
 
-.nav-button.prev {
-  left: 20px;
-}
+.hidden{ display: none; }
 
-.nav-button.next {
-  right: 20px;
-}
-.hidden {
-  display: none;
-}
-
-.list-container {
+/* =======================
+   List (cards)
+   ======================= */
+.list-container{
   max-width: 1200px;
   margin: 20px auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
   gap: 20px;
   padding: 0 20px;
 }
-
-.list-card {
+.list-card{
   background: #fff;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   cursor: pointer;
   overflow: hidden;
-  transition: transform 0.2s;
+  transition: transform .2s, background-color .2s;
 }
-
-.list-card:hover {
+.list-card:hover{
   transform: translateY(-5px);
+  background: color-mix(in srgb, var(--sub-color) 50%, #fff);
 }
-
-.list-card img {
+.list-card img{
   width: 100%;
   height: 150px;
   object-fit: cover;
   display: block;
 }
+.list-card .card-body{ padding: 10px; }
 
-.list-card .card-body {
-  padding: 10px;
-}
-/* ===== グリッドレイアウト ===== */
-.grid-container {
+/* =======================
+   Detail grid
+   ======================= */
+.grid-container{
   max-width: 1200px;
   margin: 0 auto;
   display: grid;
@@ -191,52 +156,45 @@ h1 {
   gap: 20px;
   padding: 0 20px;
 }
-
-.grid-item {
+.grid-item{
   background: #fff;
   border: 5px solid #ddd;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-/* キャライメージカードだけ背景透明にする */
-.grid-item.image-box {
+.grid-item.image-box{
   background: transparent;
   box-shadow: none;
   border: none;
 }
-
-/* 画像を固定サイズに調整 */
-.grid-item.image-box img {
+.grid-item.image-box img{
   width: 100%;
-  height: 300px; /* 固定高さ */
-  object-fit: contain; /* アスペクト比維持 */
+  height: 300px;
+  object-fit: contain;
   display: block;
   border-radius: 8px;
   background: transparent;
 }
-
-/* ===== キャラサマリーカード ===== */
-.grid-item.summary-card {
+.grid-item.summary-card{
   border: none;
-  box-shadow: 10px 10px 0px rgba(0, 0, 0, 0.15);
+  box-shadow: 10px 10px 0 rgba(0,0,0,0.15); /* フラット影 */
   background: #fff;
-  height: auto; /* 自動サイズに戻す */
+  height: auto;
 }
 
-/* ===== メモカード ===== */
-.memo-card {
+/* =======================
+   Memo card / Back button
+   ======================= */
+.memo-card{
   grid-column: span 2;
   background: #fff;
   border: 5px solid #ddd;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-/* ===== 一覧に戻るボタン ===== */
-.back-button {
+.back-button{
   display: block;
   margin: 20px auto;
   padding: 8px 20px;
@@ -245,8 +203,11 @@ h1 {
   background: #fff;
   cursor: pointer;
 }
-/* パレットUI（簡易ドロップダウン） */
-.palette-btn {
+
+/* =======================
+   Palette dropdown
+   ======================= */
+.palette-btn{
   margin-left: 10px;
   padding: 6px 10px;
   border: 1px solid #ccc;
@@ -254,8 +215,7 @@ h1 {
   background: #fff;
   cursor: pointer;
 }
-
-.palette-panel {
+.palette-panel{
   position: absolute;
   right: 20px;
   top: 52px;
@@ -269,8 +229,7 @@ h1 {
   padding: 8px;
   z-index: 1000;
 }
-
-.palette-item {
+.palette-item{
   display: flex;
   align-items: center;
   gap: 10px;
@@ -278,15 +237,13 @@ h1 {
   border-radius: 8px;
   cursor: pointer;
 }
-.palette-item:hover { background: #f6f7f8; }
-
-.palette-name {
+.palette-item:hover{ background: #f6f7f8; }
+.palette-name{
   font-size: .9rem;
   color: #333;
   min-width: 110px;
 }
-
-.palette-bars {
+.palette-bars{
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   width: 110px;
@@ -295,70 +252,27 @@ h1 {
   overflow: hidden;
   border: 1px solid #eee;
 }
-.palette-bars > span:nth-child(1) { background: var(--base-color);   }
-.palette-bars > span:nth-child(2) { background: var(--accent-color); }
-.palette-bars > span:nth-child(3) { background: var(--sub-color);    }
+.palette-bars > span:nth-child(1){ background: var(--base-color); }
+.palette-bars > span:nth-child(2){ background: var(--accent-color); }
+.palette-bars > span:nth-child(3){ background: var(--sub-color); }
 
-/* === スマホ・タブレット対応（768px以下） === */
-@media (max-width: 768px) {
-
-  /* グリッドを1カラム化 */
-  .grid-container {
-    grid-template-columns: 1fr;
-  }
-
-  /* 一覧カードのサイズ調整 */
-  .list-container {
+/* =======================
+   Responsive (<=768px)
+   ======================= */
+@media (max-width: 768px){
+  .grid-container{ grid-template-columns: 1fr; }
+  .list-container{
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 0 10px;
   }
-
-  /* ヘッダーの配置調整 */
-  .header-inner {
+  .header-inner{
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
   }
-
-  .filter-buttons {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .search-box {
-    width: 100%;
-    max-width: 300px;
-  }
-
-  /* 文字サイズを少し小さく */
-  h1 {
-    font-size: 1.2rem;
-  }
-  h2, h3 {
-    font-size: 1rem;
-  }
-/* === THEME OVERRIDES (put at the very end) === */
-body{
-  background: var(--sub-color);
-}
-.header{
-  background: var(--base-color);
-  color: #222;
-}
-.filter-buttons button{
-  color: var(--accent-color);
-  border-color: var(--accent-color);
-}
-.filter-buttons button.active{
-  background: var(--accent-color);
-  color: #fff;
-  border-color: var(--accent-color);
-}
-.section-top{
-  background: var(--sub-color);
-}
-.list-card:hover{
-  background: color-mix(in srgb, var(--sub-color) 50%, #fff);
-}
+  .filter-buttons{ flex-wrap: wrap; gap: 6px; }
+  .search-box{ width: 100%; max-width: 300px; }
+  h1{ font-size: 1.2rem; }
+  h2, h3{ font-size: 1rem; }
 }
