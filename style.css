@@ -291,6 +291,7 @@ body.editing .edit-btn {
   border-color: var(--accent-color);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-color) 20%, transparent);
 }
+body.is-editing .grid-item { border-style: dashed; }
 
 /* --- パスワードモーダル --- */
 .modal-overlay {
@@ -350,4 +351,69 @@ body.editing .edit-btn {
 /* 既存 .modal はそのままでOK。z-indexだけ一応明示 */
 .modal {
   z-index: 2000;
+}
+/* === 編集アクション（右下） === */
+.edit-actions{
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: none;
+  gap: 8px;
+  z-index: 1500;
+}
+body.is-editing .edit-actions{ display: flex; }
+.btn-primary, .btn-secondary{
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-primary{
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #fff;
+}
+
+/* === タグ入力（シリーズ） === */
+.tags{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 10px;
+}
+.tag{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sub-color) 40%, #fff);
+  border: 1px solid #ddd;
+  font-size: .9rem;
+}
+.tag .remove{
+  cursor: pointer;
+  opacity: .7;
+}
+.tag-input{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tag-input input{
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* === 入力エラー === */
+.invalid{
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 0 2px rgba(231,76,60,.15);
+}
+.field-error{
+  margin-top: 6px;
+  color: #e74c3c;
+  font-size: .85rem;
 }

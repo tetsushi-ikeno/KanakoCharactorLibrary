@@ -3,6 +3,7 @@ let filteredCharacters = [];
 let currentIndex = 0;
 let activeSeries = 'all';
 let keyword = '';
+let tempEdited = null; // 編集中だけ使うワーク
 
 async function loadData() {
   try {
@@ -87,8 +88,46 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('.back-button').addEventListener('click', showList);
   document.querySelector('.nav-button.next').addEventListener('click', showNext);
   document.querySelector('.nav-button.prev').addEventListener('click', showPrev);
-});
 
+  const saveBtn   = document.getElementById('edit-save');
+  const cancelBtn = document.getElementById('edit-cancel');
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', ()=>{
+      if (!tempEdited) return;
+      const v = validateEdited(tempEdited);
+      if (!v.ok) { alert('未入力や不正な入力があります。赤枠の項目をご確認ください。'); return; }
+
+      // ここはモック：実際は /api/update-character にPOST予定
+      const payload = buildPayload();
+      console.log('[MOCK SAVE] payload =', payload);
+      alert('保存モック：コンソールにpayloadを出力しました。');
+    });
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', ()=>{
+      // 編集開始時の状態へ戻す
+      const cur = filteredCharacters[currentIndex];
+      tempEdited = JSON.parse(JSON.stringify(cur));
+      renderEditableFields();
+      refreshSaveState();
+    });
+  }
+
+
+
+});
+// 保存時のペイロード作成（将来API投げるときにそのまま使える形）
+function buildPayload(){
+  // 当面は characters 全体を丸ごと送る方式（“最後の勝ち”）
+  const out = JSON.parse(JSON.stringify(characters));
+  // 現在の編集を out へ反映（ID一致で置換）
+  if (tempEdited) {
+    const idx = out.findIndex(c=>c.id === tempEdited.id);
+    if (idx >= 0) out[idx] = JSON.parse(JSON.stringify(tempEdited));
+  }
+  return { characters: out };
+}
 function applyFilters() {
   const kw = keyword.trim().toLowerCase();
   filteredCharacters = characters.filter(c =>
@@ -218,7 +257,7 @@ function wireHeaderHandlers() {
 }
 
 // === 追加: 編集UIだけ（保存なし） ===
-const ADMIN_PASSWORD = 'kmk2525';
+const ADMIN_PASSWORD = 'knk2525';
 let isEditing = false;
 
 // 鉛筆ボタン -> モーダル表示
@@ -272,6 +311,9 @@ document.addEventListener('DOMContentLoaded', () => {
 function enterEditMode(){
   isEditing = true;
   document.body.classList.add('is-editing');
+  // 現在のデータをワークにコピー
+  const src = filteredCharacters[currentIndex];
+  tempEdited = JSON.parse(JSON.stringify(src));
   // 詳細ビューにいるときだけフォーム化
   if (!document.getElementById('detail-view').classList.contains('hidden')) {
     renderEditableFields();
@@ -279,68 +321,130 @@ function enterEditMode(){
   // 鉛筆を「編集終了」に見せたい場合はラベルを変える（任意）
   const btn = document.getElementById('edit-btn');
   if (btn) btn.textContent = '編集終了';
+    // 追加：右下のアクション表示
+  document.getElementById('edit-actions').hidden = false;
+  refreshSaveState();
 }
 
 function exitEditMode(){
   isEditing = false;
   document.body.classList.remove('is-editing');
+  tempEdited = null;
   // 再描画で元の表示に戻す
   if (!document.getElementById('detail-view').classList.contains('hidden')) {
     loadCharacter(currentIndex);
   }
   const btn = document.getElementById('edit-btn');
   if (btn) btn.textContent = '✎';
+  document.getElementById('edit-actions').hidden = true;
 }
 
 // 詳細ビューの表示を“入力フォーム”に差し替える（保存はしない）
 function renderEditableFields(){
-  const data = (filteredCharacters[currentIndex] || {});
-  // サマリー（シリーズのみ編集UI / IDと名前は非編集）
+  const data = tempEdited || filteredCharacters[currentIndex] || {};
+
+  // === シリーズ（タグ式） ===
+  const allSeries = Array.from(new Set(characters.map(c => c.series))).filter(Boolean);
+  // 文字列→配列に正規化
+  if (!Array.isArray(data.series)) data.series = data.series ? [data.series] : [];
+
   const summary = document.getElementById('character-summary');
   if (summary) {
     summary.innerHTML = `
       <p>No.${data.id}</p>
       <h2>${data.name}</h2>
-      <label>シリーズ：
-        <select id="edit-series" class="edit-field">
-          ${['ねこニャ町','四角丸町','にじいろ学校'].map(s =>
-            `<option value="${s}" ${s===data.series?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </label>
+
+      <label>シリーズ：</label>
+      <div class="tags" id="series-tags"></div>
+      <div class="tag-input">
+        <input id="series-input" list="series-datalist" placeholder="シリーズを追加（Enter）">
+        <datalist id="series-datalist">
+          ${allSeries.map(s=>`<option value="${s}">`).join('')}
+        </datalist>
+      </div>
+      <div id="series-error" class="field-error" style="display:none;">シリーズを1つ以上選んでください。</div>
     `;
   }
 
-  // プロフィール
+  // タグ描画
+  function renderSeriesTags(){
+    const wrap = document.getElementById('series-tags');
+    wrap.innerHTML = '';
+    (data.series||[]).forEach(s=>{
+      const el = document.createElement('span');
+      el.className = 'tag';
+      el.innerHTML = `${s}<span class="remove" title="削除">✕</span>`;
+      el.querySelector('.remove').onclick = ()=>{ 
+        data.series = data.series.filter(x=>x!==s);
+        renderSeriesTags(); 
+        refreshSaveState();
+      };
+      wrap.appendChild(el);
+    });
+  }
+  renderSeriesTags();
+
+  // 追加入力
+  const seriesInput = document.getElementById('series-input');
+  seriesInput.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') {
+      const v = seriesInput.value.trim();
+      if (v && !data.series.includes(v)) {
+        data.series.push(v);
+        renderSeriesTags();
+        seriesInput.value = '';
+        refreshSaveState();
+      }
+      e.preventDefault();
+    }
+  });
+
+  // === プロフィール ===
   const profile = document.getElementById('profile');
   if (profile) {
     profile.innerHTML = `
       <h3>プロフィール</h3>
-      <label>住んでいるところ：<input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}" /></label><br><br>
-      <label>好きなもの・こと：<input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}" /></label><br><br>
+      <label>住んでいるところ：
+        <input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}" />
+      </label><br><br>
+      <label>好きなもの・こと：
+        <input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}" />
+      </label><br><br>
       <label>イメージカラー：
         <select id="edit-color" class="edit-field">
           ${colorOptions((data.profile?.['イメージカラー']||'').toLowerCase())}
         </select>
       </label>
+      <div id="color-error" class="field-error" style="display:none;">未対応の色名です。</div>
     `;
   }
 
-  // 見た目
+  // === 見た目 ===
   const appearance = document.getElementById('appearance');
   if (appearance) {
     appearance.innerHTML = `
       <h3>見た目</h3>
       <textarea id="edit-appearance" class="edit-field textarea">${escapeHtml(data.appearance||'')}</textarea>
+      <div id="appearance-error" class="field-error" style="display:none;">1000文字以内で入力してください。</div>
     `;
   }
 
-  // メモ
+  // === メモ ===
   const memo = document.getElementById('memo');
   if (memo) {
     memo.innerHTML = `
       <textarea id="edit-memo" class="edit-field textarea">${escapeHtml(data.memo||'')}</textarea>
+      <div id="memo-error" class="field-error" style="display:none;">1000文字以内で入力してください。</div>
     `;
   }
+
+  // 入力イベント → tempEditedに反映
+  const $ = (id)=>document.getElementById(id);
+  $('edit-home')?.addEventListener('input', (e)=>{ data.profile['住んでいるところ']=e.target.value; refreshSaveState(); });
+  $('edit-like')?.addEventListener('input', (e)=>{ data.profile['好きなもの・こと']=e.target.value; refreshSaveState(); });
+  $('edit-color')?.addEventListener('change', (e)=>{ data.profile['イメージカラー']=e.target.value; refreshSaveState(); });
+  $('edit-appearance')?.addEventListener('input', (e)=>{ data.appearance=e.target.value; refreshSaveState(); });
+  $('edit-memo')?.addEventListener('input', (e)=>{ data.memo=e.target.value; refreshSaveState(); });
 }
 
 // ユーティリティ
@@ -394,5 +498,59 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', (e) => {
     if (!modal.hidden && e.key === 'Escape') closeModal();
   });
+function validateEdited(data){
+  const errors = {};
+
+  // シリーズ：最低1つ
+  if (!Array.isArray(data.series) || data.series.length === 0) {
+    errors.series = 'シリーズを1つ以上選んでください。';
+  }
+
+  // 色：候補内のみ
+  const allowed = colorOptions('').match(/value="([^"]+)"/g)?.map(m=>m.replace(/^value="|"$|/g,'')) || [];
+  const color = (data.profile?.['イメージカラー']||'').toLowerCase();
+  if (color && !allowed.includes(color)) {
+    errors.color = '未対応の色名です。';
+  }
+
+  // 長さ
+  if ((data.appearance||'').length > 1000) errors.appearance = '1000文字以内で入力してください。';
+  if ((data.memo||'').length > 1000) errors.memo = '1000文字以内で入力してください。';
+
+  // UIへ反映
+  // シリーズ
+  const seriesErrEl = document.getElementById('series-error');
+  if (seriesErrEl) seriesErrEl.style.display = errors.series ? '' : 'none';
+
+  // 色
+  const colorSel = document.getElementById('edit-color');
+  const colorErr = document.getElementById('color-error');
+  if (colorSel) colorSel.classList.toggle('invalid', !!errors.color);
+  if (colorErr) colorErr.style.display = errors.color ? '' : 'none';
+
+  // appearance
+  const appTa = document.getElementById('edit-appearance');
+  const appErr= document.getElementById('appearance-error');
+  if (appTa) appTa.classList.toggle('invalid', !!errors.appearance);
+  if (appErr) appErr.style.display = errors.appearance ? '' : 'none';
+
+  // memo
+  const memoTa = document.getElementById('edit-memo');
+  const memoErr= document.getElementById('memo-error');
+  if (memoTa) memoTa.classList.toggle('invalid', !!errors.memo);
+  if (memoErr) memoErr.style.display = errors.memo ? '' : 'none';
+
+  return { ok: Object.keys(errors).length === 0, errors };
+}
+
+function refreshSaveState(){
+  const saveBtn = document.getElementById('edit-save');
+  if (!saveBtn || !tempEdited) return;
+  const { ok } = validateEdited(tempEdited);
+  saveBtn.disabled = !ok;
+}
+
+
+
 });
 ;
