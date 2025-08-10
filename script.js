@@ -216,4 +216,142 @@ function wireHeaderHandlers() {
     applyFilters();
   });
 }
+
+// === 追加: 編集UIだけ（保存なし） ===
+const ADMIN_PASSWORD = 'kmk2525';
+let isEditing = false;
+
+// 鉛筆ボタン -> モーダル表示
+document.addEventListener('DOMContentLoaded', () => {
+  const editBtn = document.getElementById('edit-btn');
+  const pwBackdrop = document.getElementById('pw-backdrop');
+  const pwModal = document.getElementById('pw-modal');
+  const pwInput = document.getElementById('pw-input');
+  const pwOk = document.getElementById('pw-ok');
+  const pwCancel = document.getElementById('pw-cancel');
+  const pwError = document.getElementById('pw-error');
+
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      // 編集中なら終了、未編集ならPW入力
+      if (isEditing) {
+        exitEditMode();
+        return;
+      }
+      pwError.hidden = true;
+      pwInput.value = '';
+      pwBackdrop.hidden = false;
+      pwModal.hidden = false;
+      setTimeout(() => pwInput.focus(), 0);
+    });
+  }
+
+  // モーダル操作
+  pwCancel.addEventListener('click', closePwModal);
+  pwBackdrop.addEventListener('click', closePwModal);
+  pwOk.addEventListener('click', () => {
+    if (pwInput.value === ADMIN_PASSWORD) {
+      closePwModal();
+      enterEditMode();
+    } else {
+      pwError.hidden = false;
+    }
+  });
+  pwInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') pwOk.click();
+    if (e.key === 'Escape') closePwModal();
+  });
+
+  function closePwModal(){
+    pwBackdrop.hidden = true;
+    pwModal.hidden = true;
+  }
+});
+
+// 編集モード ON/OFF
+function enterEditMode(){
+  isEditing = true;
+  document.body.classList.add('is-editing');
+  // 詳細ビューにいるときだけフォーム化
+  if (!document.getElementById('detail-view').classList.contains('hidden')) {
+    renderEditableFields();
+  }
+  // 鉛筆を「編集終了」に見せたい場合はラベルを変える（任意）
+  const btn = document.getElementById('edit-btn');
+  if (btn) btn.textContent = '編集終了';
+}
+
+function exitEditMode(){
+  isEditing = false;
+  document.body.classList.remove('is-editing');
+  // 再描画で元の表示に戻す
+  if (!document.getElementById('detail-view').classList.contains('hidden')) {
+    loadCharacter(currentIndex);
+  }
+  const btn = document.getElementById('edit-btn');
+  if (btn) btn.textContent = '✎';
+}
+
+// 詳細ビューの表示を“入力フォーム”に差し替える（保存はしない）
+function renderEditableFields(){
+  const data = (filteredCharacters[currentIndex] || {});
+  // サマリー（シリーズのみ編集UI / IDと名前は非編集）
+  const summary = document.getElementById('character-summary');
+  if (summary) {
+    summary.innerHTML = `
+      <p>No.${data.id}</p>
+      <h2>${data.name}</h2>
+      <label>シリーズ：
+        <select id="edit-series" class="edit-field">
+          ${['ねこニャ町','四角丸町','にじいろ学校'].map(s =>
+            `<option value="${s}" ${s===data.series?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </label>
+    `;
+  }
+
+  // プロフィール
+  const profile = document.getElementById('profile');
+  if (profile) {
+    profile.innerHTML = `
+      <h3>プロフィール</h3>
+      <label>住んでいるところ：<input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}" /></label><br><br>
+      <label>好きなもの・こと：<input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}" /></label><br><br>
+      <label>イメージカラー：
+        <select id="edit-color" class="edit-field">
+          ${colorOptions((data.profile?.['イメージカラー']||'').toLowerCase())}
+        </select>
+      </label>
+    `;
+  }
+
+  // 見た目
+  const appearance = document.getElementById('appearance');
+  if (appearance) {
+    appearance.innerHTML = `
+      <h3>見た目</h3>
+      <textarea id="edit-appearance" class="edit-field textarea">${escapeHtml(data.appearance||'')}</textarea>
+    `;
+  }
+
+  // メモ
+  const memo = document.getElementById('memo');
+  if (memo) {
+    memo.innerHTML = `
+      <textarea id="edit-memo" class="edit-field textarea">${escapeHtml(data.memo||'')}</textarea>
+    `;
+  }
+}
+
+// ユーティリティ
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s]));
+}
+function colorOptions(selected){
+  const colors = ["black","white","gray","silver","red","crimson","tomato","coral","orange","gold",
+                  "yellow","khaki","olive","green","seagreen","lime","teal","cyan","skyblue","deepskyblue",
+                  "blue","navy","indigo","purple","violet","magenta","pink","brown","chocolate","sienna"];
+  return colors.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${c}</option>`).join('');
+}
+
 ;

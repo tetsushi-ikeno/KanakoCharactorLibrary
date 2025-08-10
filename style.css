@@ -276,3 +276,76 @@ h1{
   h1{ font-size: 1.2rem; }
   h2, h3{ font-size: 1rem; }
 }
+
+/* ==== 編集UI（鉛筆・モーダル） ==== */
+.edit-btn{
+  margin-left: 10px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.modal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.35);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+}
+.modal{
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 320px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  padding: 16px;
+  z-index: 2001;
+}
+.modal h3{ margin: 0 0 8px; font-size: 1.1rem; }
+.modal-desc{ margin: 0 0 12px; color: #555; font-size: .9rem; }
+.modal input{
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.modal-actions{
+  display: flex; justify-content: flex-end; gap: 8px;
+}
+.btn-primary{
+  padding: 6px 12px; border: 1px solid var(--accent-color);
+  background: var(--accent-color); color: #fff; border-radius: 8px; cursor: pointer;
+}
+.btn-secondary{
+  padding: 6px 12px; border: 1px solid #ccc;
+  background: #fff; color: #333; border-radius: 8px; cursor: pointer;
+}
+.modal-error{ color: #d00; font-size: .85rem; margin: 6px 0 0; }
+
+/* 編集モードの見た目（分かりやすく） */
+.is-editing .grid-item{
+  outline: 2px dashed var(--accent-color);
+  outline-offset: 4px;
+}
+.edit-field{
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font: inherit;
+}
+.edit-field.textarea{
+  min-height: 100px;
+  resize: vertical;
+}
+.edit-inline{
+  display: inline-block;
+  padding: 2px 6px;
+  border: 1px dashed #bbb;
+  border-radius: 6px;
+}
