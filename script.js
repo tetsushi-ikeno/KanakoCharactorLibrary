@@ -415,4 +415,5 @@ document.addEventListener('DOMContentLoaded', ()=>{
   document.querySelector('.back-button').addEventListener('click', showList);
   document.querySelector('.nav-button.next').addEventListener('click', showNext);
   document.querySelector('.nav-button.prev').addEventListener('click', showPrev);
-})};
+})
+;
