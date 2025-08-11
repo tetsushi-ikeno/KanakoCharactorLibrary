@@ -30,7 +30,36 @@
       </div>
     </div>
   </header>
+<!-- ▼▼ 調査状況サマリーバー ▼▼ -->
+<section class="summary-bar" role="region" aria-label="調査状況">
+  <div class="summary-inner">
+    <div class="summary-head">
+      <span class="summary-title">調査状況</span>
+      <div class="summary-pills">
+        <button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
+          <span class="dot dot-done"></span><span class="pill-label">調査済</span>
+          <b id="sum-count-done" class="pill-count">0</b>
+        </button>
+        <button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
+          <span class="dot dot-wip"></span><span class="pill-label">調査中</span>
+          <b id="sum-count-wip" class="pill-count">0</b>
+        </button>
+      </div>
+    </div>
 
+    <div class="progressbar" aria-hidden="true">
+      <div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
+      <div id="sum-bar-wip"  class="bar-seg bar-wip"  style="width:0%"></div>
+    </div>
+
+    <div class="summary-numbers">
+      調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
+      調査中 <b id="sum-txt-wip">0</b>
+      <button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
+    </div>
+  </div>
+</section>
+<!-- ▲▲ 調査状況サマリーバー ▲▲ -->
 <!-- 一覧ビュー -->
 <section id="list-view">
   <div class="list-container" id="list-container">

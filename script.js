@@ -73,6 +73,7 @@ async function loadData(){
     filteredCharacters = sortCharacters(characters);
     renderList(filteredCharacters);
     wireHeaderHandlers();
+    renderSummaryBar();
   }catch(e){
     console.error('API読み込みに失敗:', e);
     alert('APIからの読み込みに失敗しました。');
@@ -167,7 +168,75 @@ function applyFilters(){
   });
   filteredCharacters = sortCharacters(filteredCharacters);
   renderList(filteredCharacters);
+  renderSummaryBar();
 }
+// ====== 調査状況サマリーバー描画 ======
+function renderSummaryBar(){
+  if (!Array.isArray(characters) || characters.length === 0) return;
+
+  // 集計（全体ベース）
+  const total = characters.length;
+  const done  = characters.filter(c => !isInvestigating(c)).length;
+  const wip   = total - done;
+  const rate  = total ? Math.round((done/total)*100) : 0;
+
+  // 要素参照
+  const $ = id => document.getElementById(id);
+  const el = {
+    total: $('sum-txt-total'), done: $('sum-txt-done'), wip: $('sum-txt-wip'), rate: $('sum-txt-rate'),
+    cDone: $('sum-count-done'), cWip: $('sum-count-wip'),
+    barDone: $('sum-bar-done'), barWip: $('sum-bar-wip'),
+    pillDone: $('sum-pill-done'), pillWip: $('sum-pill-wip'),
+    clear: $('sum-clear')
+  };
+  if (!el.total) return; // まだDOM未挿入のとき
+
+  // 数字
+  el.total.textContent = total;
+  el.done.textContent  = done;
+  el.wip.textContent   = wip;
+  el.rate.textContent  = rate + '%';
+  el.cDone.textContent = done;
+  el.cWip.textContent  = wip;
+
+  // バー（2色セグメント）
+  el.barDone.style.width = rate + '%';
+  el.barWip.style.width  = (100 - rate) + '%';
+
+  // フィルタ状態の強調（既存の showPendingOnly と同期）
+  const mode = showPendingOnly ? 'wip' : null; // 既存のトグルを使う
+  el.pillDone.setAttribute('aria-pressed', String(mode === 'done'));
+  el.pillWip .setAttribute('aria-pressed', String(mode === 'wip'));
+  el.barDone.style.opacity = (mode === 'wip') ? .35 : 1;
+  el.barWip .style.opacity = (mode === 'done') ? .35 : 1;
+  el.clear.hidden = (mode === null);
+
+  // クリック（トグル）。既存のフィルタと同じ挙動に寄せる
+  if (!el.pillDone.dataset.bound){
+    el.pillDone.addEventListener('click', ()=>{
+      // 「調査済だけ」表示は、既存仕様では未実装なので「全件表示」に戻す挙動に近い。
+      // 需要があれば、調査済だけの分岐を追加してもOK。
+      showPendingOnly = false;
+      applyFilters(); // 再描画
+    });
+    el.pillDone.dataset.bound = '1';
+  }
+  if (!el.pillWip.dataset.bound){
+    el.pillWip.addEventListener('click', ()=>{
+      showPendingOnly = !showPendingOnly; // 調査中だけ⇔全件
+      applyFilters();
+    });
+    el.pillWip.dataset.bound = '1';
+  }
+  if (!el.clear.dataset.bound){
+    el.clear.addEventListener('click', ()=>{
+      showPendingOnly = false; applyFilters();
+    });
+    el.clear.dataset.bound = '1';
+  }
+}
+
+
 function filterBySeries(series){
   activeSeries = series==='all' ? 'all' : series;
   applyFilters();
