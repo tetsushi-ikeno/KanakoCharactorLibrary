@@ -5,6 +5,8 @@ let currentIndex = 0;
 let activeSeries = 'all';
 let keyword = '';
 let tempEdited = null; // 編集ワーク
+let showPendingOnly = false; // 調査中だけ表示するか
+
 
 // ====== helpers (images / bg / fallback) ======
 function imgSrcFor(id){ return `images/${id}.png`; }
@@ -20,6 +22,19 @@ function trySetSectionBg(id){
   test.onload  = () => { sec.style.backgroundImage = `url('${url}')`; };
   test.onerror = () => { sec.style.backgroundImage = ''; };
   test.src = url;
+}
+function isInvestigating(chara){
+  const NEEDLE = 'ーー調査中ーー';
+  // 文字列候補を全部かき集めてチェック
+  const arr = [];
+  if (chara.name) arr.push(chara.name);
+  if (chara.series) arr.push(Array.isArray(chara.series) ? chara.series.join('、') : chara.series);
+  if (chara.appearance) arr.push(chara.appearance);
+  if (chara.memo) arr.push(chara.memo);
+  if (chara.profile) {
+    Object.values(chara.profile).forEach(v => { if (typeof v === 'string') arr.push(v); });
+  }
+  return arr.some(s => typeof s === 'string' && s.includes(NEEDLE));
 }
 
 // ====== sort: Series -> No ======
@@ -115,26 +130,38 @@ function loadCharacter(index=0){
 function showDetail(){
   document.getElementById('list-view').classList.add('hidden');
   document.getElementById('detail-view').classList.remove('hidden');
+  document.body.classList.add('detail-mode');
+
   loadCharacter(currentIndex);
 }
 function showList(){
   document.getElementById('detail-view').classList.add('hidden');
   document.getElementById('list-view').classList.remove('hidden');
+  document.body.classList.remove('detail-mode');
+
 }
 
 // ====== filter/search (series配列対応) ======
 function applyFilters(){
   const kw = keyword.trim().toLowerCase();
   filteredCharacters = characters.filter(c=>{
-    const bySeries = (activeSeries === 'all') || seriesIncludes(c, activeSeries);
-    const sText = seriesTextForView(c).toLowerCase();
-    const memo = (c.memo||'').toLowerCase();
-    return bySeries && (
-      kw==='' ||
-      c.name.toLowerCase().includes(kw) ||
-      sText.includes(kw) ||
-      memo.includes(kw)
-    );
+    // シリーズ（複数対応）
+    const hitSeries =
+      activeSeries === 'all' ||
+      (Array.isArray(c.series) ? c.series.includes(activeSeries) : c.series === activeSeries);
+
+    // 検索
+    const kwHit = kw === '' ||
+      (c.name && c.name.toLowerCase().includes(kw)) ||
+      (Array.isArray(c.series) ? c.series.join('、').toLowerCase().includes(kw) : (c.series||'').toLowerCase().includes(kw)) ||
+      ((c.memo||'').toLowerCase().includes(kw)) ||
+      ((c.appearance||'').toLowerCase().includes(kw)) ||
+      (c.profile && Object.values(c.profile).some(v => String(v).toLowerCase().includes(kw)));
+
+    // 調査中だけ
+    const pendingOK = !showPendingOnly || isInvestigating(c);
+
+    return hitSeries && kwHit && pendingOK;
   });
   filteredCharacters = sortCharacters(filteredCharacters);
   renderList(filteredCharacters);
@@ -366,6 +393,18 @@ function wireHeaderHandlers(){
     tempEdited = JSON.parse(JSON.stringify(filteredCharacters[currentIndex]));
     renderEditableFields(); refreshSaveState();
   });
+
+// 調査中トグル
+  const pendingBtn = document.getElementById('pending-toggle');
+  if (pendingBtn) {
+    pendingBtn.addEventListener('click', () => {
+      const pressed = pendingBtn.getAttribute('aria-pressed') === 'true';
+      const next = !pressed;
+      pendingBtn.setAttribute('aria-pressed', String(next));
+      showPendingOnly = next;
+      applyFilters();
+    });
+
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
