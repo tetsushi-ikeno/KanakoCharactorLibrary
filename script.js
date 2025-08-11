@@ -61,11 +61,13 @@ function seriesTextForView(c){
   const arr = asSeriesArray(c);
   return arr.join('、');
 }
+const VERCEL_ORIGIN = "https://kanako-charactor-library.vercel.app";
+const API_ORIGIN = location.hostname.endsWith("vercel.app") ? location.origin : VERCEL_ORIGIN;
 
 // ====== data load ======
 async function loadData(){
   try{
-    const res = await fetch('/api/characters', { cache:'no-store' });
+    const res = await fetch(`${API_ORIGIN}/api/characters`, { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     characters = await res.json();
     filteredCharacters = sortCharacters(characters);
