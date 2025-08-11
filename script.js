@@ -65,15 +65,15 @@ function seriesTextForView(c){
 // ====== data load ======
 async function loadData(){
   try{
-    const res = await fetch('data/characters.json?v=' + Date.now(), { cache:'no-store' });
-    if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`);
+    const res = await fetch('/api/characters', { cache:'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     characters = await res.json();
     filteredCharacters = sortCharacters(characters);
     renderList(filteredCharacters);
     wireHeaderHandlers();
   }catch(e){
-    console.error('JSONの読み込みに失敗しました:', e);
-    alert('データ読み込みエラー。JSONが存在するか、パスが正しいか確認してください。');
+    console.error('API読み込みに失敗:', e);
+    alert('APIからの読み込みに失敗しました。');
   }
 }
 
@@ -404,7 +404,7 @@ function wireHeaderHandlers(){
       showPendingOnly = next;
       applyFilters();
     });
-
+  }
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
