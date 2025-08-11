@@ -86,6 +86,9 @@ h1{
   background: var(--sub-color); /* 上段の背景もサブ */
   padding: 20px 0;
   position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .section-middle,
 .section-bottom{

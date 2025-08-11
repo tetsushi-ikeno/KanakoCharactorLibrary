@@ -12,7 +12,7 @@ async function loadData() {
       throw new Error(`HTTPエラー: ${res.status}`);
     }
     characters = await res.json();
-    filteredCharacters = [...characters];
+    filteredCharacters = sortCharacters(characters);
     renderList(filteredCharacters);
     wireHeaderHandlers(); // ヘッダーの検索/絞り込みを接続
   } catch (e) {
@@ -25,7 +25,9 @@ function loadCharacter(index = 0) {
   const data = filteredCharacters[index];
   if (!data) return;
 
-document.getElementById('character-image').src = data.image;
+  const mainImg = document.getElementById('character-image');
+  mainImg.src = imgSrcFor(data.id);
+  setFallbackOnError(mainImg);
   document.getElementById('character-summary').innerHTML = `
     <p>No.${data.id}</p>
     <h2>${data.name}</h2>
@@ -46,6 +48,7 @@ document.getElementById('character-image').src = data.image;
 
 // ===== 一覧生成 =====
 function renderList(charactersToRender) {
+  charactersToRender = sortCharacters(charactersToRender);
   const container = document.getElementById('list-container');
   container.innerHTML = '';
 
@@ -53,7 +56,7 @@ function renderList(charactersToRender) {
     const card = document.createElement('div');
     card.className = 'list-card';
     card.innerHTML = `
-      <img src="${chara.image}" alt="${chara.name}">
+    <img src="${imgSrcFor(chara.id)}" alt="${chara.name}"></img>
       <div class="card-body">
         <p>No.${chara.id}</p>
         <h3>${chara.name}</h3>
@@ -65,6 +68,8 @@ function renderList(charactersToRender) {
       showDetail();
     });
     container.appendChild(card);
+    const img = card.querySelector('img');
+    setFallbackOnError(img);
   });
 }
 
@@ -139,6 +144,7 @@ function applyFilters() {
       (c.memo || '').toLowerCase().includes(kw)
     )
   );
+  filteredCharacters = sortCharacters(filteredCharacters);
   renderList(filteredCharacters);
 }
 
@@ -255,7 +261,16 @@ function wireHeaderHandlers() {
     applyFilters();
   });
 }
-
+// 並び順：シリーズ → No.
+const SERIES_ORDER = { 'ねこニャ町': 0, '四角丸町': 1, 'にじいろ学校': 2 };
+function sortCharacters(arr) {
+  return arr.slice().sort((a, b) => {
+    const sa = SERIES_ORDER[a.series] ?? 99;
+    const sb = SERIES_ORDER[b.series] ?? 99;
+    if (sa !== sb) return sa - sb;
+    return parseInt(a.id, 10) - parseInt(b.id, 10);
+  });
+}
 // === 追加: 編集UIだけ（保存なし） ===
 const ADMIN_PASSWORD = 'knk2525';
 let isEditing = false;
@@ -550,7 +565,16 @@ function refreshSaveState(){
   saveBtn.disabled = !ok;
 }
 
-
+function imgSrcFor(id) {
+  return `images/${id}.png`;
+}
+function setFallbackOnError(imgEl) {
+  imgEl.onerror = () => {
+    imgEl.onerror = null;              // ループ防止
+    imgEl.src = 'images/placeholder.png';
+  };
+}
 
 });
+
 ;
