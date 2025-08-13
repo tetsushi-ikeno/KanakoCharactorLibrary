@@ -6,6 +6,8 @@ let activeSeries = 'all';
 let keyword = '';
 let tempEdited = null; // 編集ワーク
 let statusFilter = null;//調査状況フィルタ（null | 'wip' | 'done'）
+let adminSecret = ''; // 入力された管理パスワードを保持（X-Admin-Secretに使う）
+
 
 // ====== helpers (images / bg / fallback) ======
 function imgSrcFor(id){ return `images/${id}.png`; }
@@ -78,6 +80,22 @@ async function loadData(){
     alert('APIからの読み込みに失敗しました。');
   }
 }
+async function apiPatchCharacter(payload){
+  const url = `${API_ORIGIN}/api/characters`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Admin-Secret': adminSecret // モーダルで入力された値
+    },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){
+    const text = await res.text().catch(()=> '');
+    throw new Error(`PATCH ${res.status} ${text}`);
+  }
+  return res.json();
+}
 
 // ====== list ======
 function renderList(list){
@@ -116,11 +134,13 @@ function loadCharacter(index=0){
     <h2>${data.name}</h2>
     <p>シリーズ：${seriesTextForView(data)}</p>`;
 
-  document.getElementById('profile').innerHTML = `
-    <h3>プロフィール</h3>
-    <p>住んでいるところ: ${data.profile['住んでいるところ']||''}</p>
-    <p>好きなもの・こと: ${data.profile['好きなもの・こと']||''}</p>
-    <p>イメージカラー:<span style="color:${(data.profile['イメージカラー']||'').toLowerCase()};">●</span></p>`;
+document.getElementById('profile').innerHTML = `
+  <h3>プロフィール</h3>
+  <p>住んでいるところ: ${data.profile['住んでいるところ']||''}</p>
+  <p>好きなもの・こと: ${data.profile['好きなもの・こと']||''}</p>
+  <p>イメージカラー:
+    <span class="color-dot" style="background:${(data.profile['イメージカラー']||'').toLowerCase()}"></span>
+  </p>`;
 
   document.getElementById('appearance').innerHTML = `
     <h3>見た目</h3>
@@ -294,7 +314,6 @@ function renderPaletteList(palettes){
 }
 
 // ====== edit UI (UIだけ・保存モック) ======
-const ADMIN_PASSWORD = '2525';
 let isEditing = false;
 
 function enterEditMode(){
@@ -354,15 +373,42 @@ function renderEditableFields(){
     }
   });
 
-  document.getElementById('profile').innerHTML = `
-    <h3>プロフィール</h3>
-    <label>住んでいるところ：<input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}"></label><br><br>
-    <label>好きなもの・こと：<input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}"></label><br><br>
-    <label>イメージカラー：
-      <select id="edit-color" class="edit-field">${colorOptions((data.profile?.['イメージカラー']||'').toLowerCase())}</select>
-    </label>
-    <div id="color-error" class="field-error" style="display:none;">未対応の色名です。</div>
-  `;
+const currentColor = (data.profile?.['イメージカラー'] || '').toLowerCase();
+const initialHex = toHexColor(currentColor) || '#cccccc';
+
+document.getElementById('profile').innerHTML = `
+  <h3>プロフィール</h3>
+  <label>住んでいるところ：
+    <input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}">
+  </label><br><br>
+
+  <label>好きなもの・こと：
+    <input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}">
+  </label><br><br>
+
+  <label>イメージカラー：
+    <input type="color" id="edit-color" class="edit-field" value="${initialHex}">
+    <span class="color-dot" id="edit-color-dot" style="background:${initialHex}"></span>
+  </label>
+  <div id="color-error" class="field-error" style="display:none;"></div>
+`;
+
+  // 変更ハンドラ
+  const $ = id=>document.getElementById(id);
+  $('edit-home')?.addEventListener('input', e=>{
+    data.profile['住んでいるところ'] = e.target.value;
+    refreshSaveState();
+  });
+  $('edit-like')?.addEventListener('input', e=>{
+    data.profile['好きなもの・こと'] = e.target.value;
+    refreshSaveState();
+  });
+  $('edit-color')?.addEventListener('input', e=>{
+    data.profile['イメージカラー'] = e.target.value; // #rrggbb を保持
+    const dot = $('edit-color-dot'); if(dot) dot.style.background = e.target.value;
+    refreshSaveState();
+  });
+
   document.getElementById('appearance').innerHTML = `
     <h3>見た目</h3>
     <textarea id="edit-appearance" class="edit-field textarea">${escapeHtml(data.appearance||'')}</textarea>
@@ -381,6 +427,26 @@ function renderEditableFields(){
   $('edit-memo')?.addEventListener('input', e=>{ data.memo=e.target.value; refreshSaveState(); });
 }
 
+// 任意のCSSカラー文字列 → #rrggbb（失敗時は空文字）
+function toHexColor(value){
+  if(!value) return '';
+  const d = document.createElement('div');
+  d.style.color = value; // ブラウザに解決させる
+  document.body.appendChild(d);
+  const c = getComputedStyle(d).color; // rgb(r,g,b)
+  document.body.removeChild(d);
+  const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if(!m) return '';
+  const hex = [m[1],m[2],m[3]].map(n => Number(n).toString(16).padStart(2,'0')).join('');
+  return `#${hex}`;
+}
+
+// 空欄なら "--調査中--" に置換
+function withInvestigating(v){
+  const s = (v ?? '').toString().trim();
+  return s === '' ? '--調査中--' : s;
+}
+
 // validation / save mock
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
 function colorOptions(selected){
@@ -389,17 +455,17 @@ function colorOptions(selected){
 }
 function validateEdited(data){
   const errors={};
-  if (!Array.isArray(data.series) || data.series.length===0) errors.series='シリーズを1つ以上選んでください。';
-  const allowed = colorOptions('').match(/value="([^"]+)"/g)?.map(m=>m.replace(/^value="|"$|/g,'')) || [];
-  const color=(data.profile?.['イメージカラー']||'').toLowerCase();
-  if(color && !allowed.includes(color)) errors.color='未対応の色名です。';
-  if((data.appearance||'').length>1000) errors.appearance='1000文字以内で入力してください。';
-  if((data.memo||'').length>1000) errors.memo='1000文字以内で入力してください。';
+  // type=color は常に #rrggbb を返す。空欄扱いは保存時に "--調査中--" へ置換。
+  const color = (data.profile?.['イメージカラー']||'');
+  if (color && !/^#[0-9a-f]{6}$/i.test(color)) errors.color='色の形式が不正です（#rrggbb）';
+  if ((data.appearance||'').length>1000) errors.appearance='1000文字以内で入力してください。';
+  if ((data.memo||'').length>1000) errors.memo='1000文字以内で入力してください。';
 
-  // UI 反映
-  const seriesErr=document.getElementById('series-error'); if(seriesErr) seriesErr.style.display=errors.series?'':'none';
+  // UI反映
   const colorSel=document.getElementById('edit-color'); const colorErr=document.getElementById('color-error');
-  if(colorSel) colorSel.classList.toggle('invalid', !!errors.color); if(colorErr) colorErr.style.display=errors.color?'':'none';
+  if(colorSel) colorSel.classList.toggle('invalid', !!errors.color);
+  if(colorErr) colorErr.textContent = errors.color||''; if(colorErr) colorErr.style.display = errors.color?'':'none';
+
   const appTa=document.getElementById('edit-appearance'); const appErr=document.getElementById('appearance-error');
   if(appTa) appTa.classList.toggle('invalid', !!errors.appearance); if(appErr) appErr.style.display=errors.appearance?'':'none';
   const memoTa=document.getElementById('edit-memo'); const memoErr=document.getElementById('memo-error');
@@ -407,6 +473,7 @@ function validateEdited(data){
 
   return { ok:Object.keys(errors).length===0, errors };
 }
+
 function refreshSaveState(){
   const saveBtn=document.getElementById('edit-save');
   if(!saveBtn || !tempEdited) return;
@@ -451,19 +518,55 @@ function wireHeaderHandlers(){
   pwCancel?.addEventListener('click', closePwModal);
   pwBackdrop?.addEventListener('click', closePwModal);
   pwOk?.addEventListener('click', ()=>{
-    if (pwInput.value===ADMIN_PASSWORD){ closePwModal(); enterEditMode(); }
-    else { pwError.hidden=false; }
+    if (!pwInput.value.trim()){
+      pwError.hidden = false;
+      pwError.textContent = 'パスワードを入力してください。';
+      return;
+    }
+    adminSecret = pwInput.value.trim(); // ← 入力を保持（ソースにハードコードしない）
+    pwError.hidden = true;
+    closePwModal();
+    enterEditMode();
   });
   pwInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') pwOk.click(); if(e.key==='Escape') closePwModal(); });
 
   // 保存/取消（モック）
-  document.getElementById('edit-save')?.addEventListener('click', ()=>{
-    if(!tempEdited) return;
-    const v=validateEdited(tempEdited);
-    if(!v.ok){ alert('未入力や不正な入力があります。赤枠の項目をご確認ください。'); return; }
-    console.log('[MOCK SAVE] payload=', buildPayload());
-    alert('保存モック：コンソールにpayloadを出力しました。');
-  });
+document.getElementById('edit-save')?.addEventListener('click', async ()=>{
+  if(!tempEdited) return;
+  const {ok} = validateEdited(tempEdited);
+  if(!ok){ alert('未入力や不正な入力があります。赤枠をご確認ください。'); return; }
+
+  // 空欄は "--調査中--" に置換してpayloadを構築
+  const p = tempEdited.profile || {};
+  const payload = {
+    id: tempEdited.id,
+    series: Array.isArray(tempEdited.series) ? tempEdited.series : asSeriesArray(tempEdited),
+    profile: {
+      '住んでいるところ': withInvestigating(p['住んでいるところ']),
+      '好きなもの・こと': withInvestigating(p['好きなもの・こと']),
+      'イメージカラー': withInvestigating(p['イメージカラー'] || '') // #rrggbb か "--調査中--"
+    },
+    appearance: withInvestigating(tempEdited.appearance || ''),
+    memo: withInvestigating(tempEdited.memo || '')
+  };
+
+  try{
+    const r = await apiPatchCharacter(payload);
+    console.log('PATCH ok', r);
+
+    // ローカル状態も更新
+    const i = characters.findIndex(c=>c.id===tempEdited.id);
+    if(i>=0){ characters[i] = JSON.parse(JSON.stringify(payload)); }
+    filteredCharacters = sortCharacters(characters);
+    exitEditMode();
+    showDetail(); // 再描画
+    alert('保存しました。');
+  }catch(e){
+    console.error(e);
+    if(String(e).includes('401')) alert('パスワードが違います。（X-Admin-Secret）');
+    else alert('保存に失敗しました。\n' + e.message);
+  }
+});
   document.getElementById('edit-cancel')?.addEventListener('click', ()=>{
     tempEdited = JSON.parse(JSON.stringify(filteredCharacters[currentIndex]));
     renderEditableFields(); refreshSaveState();
