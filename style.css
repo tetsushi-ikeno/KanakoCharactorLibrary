@@ -493,3 +493,13 @@ body.is-editing .edit-actions{ display: flex; }
 
 /* 詳細画面ではサマリーバー非表示でもOKにしたい場合は以下を有効化*/
 body.detail-mode .summary-bar{ display: none; }
+
+.color-dot{
+  display:inline-block;
+  width: .9em; height: .9em;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  vertical-align: -1px;
+  margin-left: .25em;
+}
+

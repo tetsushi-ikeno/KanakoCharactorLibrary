@@ -394,7 +394,7 @@ document.getElementById('profile').innerHTML = `
 `;
 
   // 変更ハンドラ
-  const $ = id=>document.getElementById(id);
+  const $id = id=>document.getElementById(id);
   $('edit-home')?.addEventListener('input', e=>{
     data.profile['住んでいるところ'] = e.target.value;
     refreshSaveState();
@@ -405,7 +405,7 @@ document.getElementById('profile').innerHTML = `
   });
   $('edit-color')?.addEventListener('input', e=>{
     data.profile['イメージカラー'] = e.target.value; // #rrggbb を保持
-    const dot = $('edit-color-dot'); if(dot) dot.style.background = e.target.value;
+    const dot = $id('edit-color-dot'); if(dot) dot.style.background = e.target.value;
     refreshSaveState();
   });
 
