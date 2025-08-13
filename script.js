@@ -5,8 +5,7 @@ let currentIndex = 0;
 let activeSeries = 'all';
 let keyword = '';
 let tempEdited = null; // 編集ワーク
-let showPendingOnly = false; // 調査中だけ表示するか
-
+let statusFilter = null;//調査状況フィルタ（null | 'wip' | 'done'）
 
 // ====== helpers (images / bg / fallback) ======
 function imgSrcFor(id){ return `images/${id}.png`; }
@@ -161,10 +160,11 @@ function applyFilters(){
       ((c.appearance||'').toLowerCase().includes(kw)) ||
       (c.profile && Object.values(c.profile).some(v => String(v).toLowerCase().includes(kw)));
 
-    // 調査中だけ
-    const pendingOK = !showPendingOnly || isInvestigating(c);
+    const statusOK =
+      !statusFilter ||
+      (statusFilter === 'wip'  ? isInvestigating(c) : !isInvestigating(c));
 
-    return hitSeries && kwHit && pendingOK;
+    return hitSeries && kwHit && statusOK;
   });
   filteredCharacters = sortCharacters(filteredCharacters);
   renderList(filteredCharacters);
@@ -203,34 +203,38 @@ function renderSummaryBar(){
   el.barDone.style.width = rate + '%';
   el.barWip.style.width  = (100 - rate) + '%';
 
-  // フィルタ状態の強調（既存の showPendingOnly と同期）
-  const mode = showPendingOnly ? 'wip' : null; // 既存のトグルを使う
+  // フィルタ状態の強調
+  const mode = statusFilter; // null | 'wip' | 'done'
+//
   el.pillDone.setAttribute('aria-pressed', String(mode === 'done'));
   el.pillWip .setAttribute('aria-pressed', String(mode === 'wip'));
   el.barDone.style.opacity = (mode === 'wip') ? .35 : 1;
   el.barWip .style.opacity = (mode === 'done') ? .35 : 1;
   el.clear.hidden = (mode === null);
 
-  // クリック（トグル）。既存のフィルタと同じ挙動に寄せる
+  // ピル: 調査済
   if (!el.pillDone.dataset.bound){
     el.pillDone.addEventListener('click', ()=>{
-      // 「調査済だけ」表示は、既存仕様では未実装なので「全件表示」に戻す挙動に近い。
-      // 需要があれば、調査済だけの分岐を追加してもOK。
-      showPendingOnly = false;
-      applyFilters(); // 再描画
+      statusFilter = (statusFilter === 'done') ? null : 'done';
+      applyFilters();
     });
     el.pillDone.dataset.bound = '1';
   }
+
+  // ピル: 調査中
   if (!el.pillWip.dataset.bound){
     el.pillWip.addEventListener('click', ()=>{
-      showPendingOnly = !showPendingOnly; // 調査中だけ⇔全件
+      statusFilter = (statusFilter === 'wip') ? null : 'wip';
       applyFilters();
     });
     el.pillWip.dataset.bound = '1';
   }
+
+  // クリア
   if (!el.clear.dataset.bound){
     el.clear.addEventListener('click', ()=>{
-      showPendingOnly = false; applyFilters();
+      statusFilter = null;
+      applyFilters();
     });
     el.clear.dataset.bound = '1';
   }
@@ -472,7 +476,7 @@ function wireHeaderHandlers(){
       const pressed = pendingBtn.getAttribute('aria-pressed') === 'true';
       const next = !pressed;
       pendingBtn.setAttribute('aria-pressed', String(next));
-      showPendingOnly = next;
+      statusFilter = next ? 'wip' : null;
       applyFilters();
     });
   }
