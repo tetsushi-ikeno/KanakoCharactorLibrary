@@ -294,7 +294,7 @@ function renderPaletteList(palettes){
 }
 
 // ====== edit UI (UIだけ・保存モック) ======
-const ADMIN_PASSWORD = 'kmk2525';
+const ADMIN_PASSWORD = '2525';
 let isEditing = false;
 
 function enterEditMode(){
