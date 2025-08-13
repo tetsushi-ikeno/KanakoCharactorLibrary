@@ -24,7 +24,7 @@ function trySetSectionBg(id){
   test.src = url;
 }
 function isInvestigating(chara){
-  const NEEDLE = 'ーー調査中ーー';
+  const NEEDLE = '調査中'; // ←ココだけでOK（--調査中-- も ーー調査中ーー も拾える）
   // 文字列候補を全部かき集めてチェック
   const arr = [];
   if (chara.name) arr.push(chara.name);
