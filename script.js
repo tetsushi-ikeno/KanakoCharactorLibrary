@@ -377,69 +377,82 @@ function renderEditableFields(){
       e.preventDefault();
     }
   });
+  data.profile ||= {};
 
-const currentColor = (data.profile?.['イメージカラー'] || '').toLowerCase();
-const initialHex = toHexColor(currentColor) || '#cccccc';
+  // ===== プロフィール（住・好き・色 24色セレクト） =====
+  const nowHex = toHexColor(data.profile['イメージカラー']);
+  const options = COLOR_24.map(([hex,label])=>{
+    const sel = (hex && nowHex && hex.toUpperCase()===nowHex) ? ' selected' : '';
+    return `<option value="${hex}"${sel}>${label}</option>`;
+  }).join('');
+  $id('profile').innerHTML = `
+    <h3>プロフィール</h3>
+    <label>住んでいるところ：
+      <input id="edit-home" class="edit-field" value="${escapeHtml(data.profile['住んでいるところ']||'')}">
+    </label><br><br>
+    <label>好きなもの・こと：
+      <input id="edit-like" class="edit-field" value="${escapeHtml(data.profile['好きなもの・こと']||'')}">
+    </label><br><br>
+    <label>イメージカラー：
+      <select id="edit-color" class="edit-field">${options}</select>
+      <span class="color-dot" id="edit-color-dot" style="background:${nowHex || 'transparent'}"></span>
+    </label>
+  `;
 
-document.getElementById('profile').innerHTML = `
-  <h3>プロフィール</h3>
-  <label>住んでいるところ：
-    <input id="edit-home" class="edit-field" value="${escapeHtml(data.profile?.['住んでいるところ']||'')}">
-  </label><br><br>
 
-  <label>好きなもの・こと：
-    <input id="edit-like" class="edit-field" value="${escapeHtml(data.profile?.['好きなもの・こと']||'')}">
-  </label><br><br>
-
-  <label>イメージカラー：
-    <input type="color" id="edit-color" class="edit-field" value="${initialHex}">
-    <span class="color-dot" id="edit-color-dot" style="background:${initialHex}"></span>
-  </label>
-  <div id="color-error" class="field-error" style="display:none;"></div>
-`;
-
-  // 変更ハンドラ（$idに統一）
+  // イベント（プロフィール）
   $id('edit-home')?.addEventListener('input', e=>{
-    data.profile['住んでいるところ'] = e.target.value;
-    refreshSaveState();
+    data.profile['住んでいるところ'] = e.target.value; refreshSaveState();
   });
   $id('edit-like')?.addEventListener('input', e=>{
-    data.profile['好きなもの・こと'] = e.target.value;
+    data.profile['好きなもの・こと'] = e.target.value; refreshSaveState();
+  });
+  $id('edit-color')?.addEventListener('change', e=>{
+    const hex = e.target.value;               // '' or #rrggbb
+    data.profile['イメージカラー'] = hex || '';
+    const dot = $id('edit-color-dot'); if (dot) dot.style.background = hex || 'transparent';
     refreshSaveState();
   });
-  $id('edit-color')?.addEventListener('input', e=>{
-    data.profile['イメージカラー'] = e.target.value; // #rrggbb を保持
-    const dot = $id('edit-color-dot'); if(dot) dot.style.background = e.target.value;
-    refreshSaveState();
-  });
-
-  document.getElementById('appearance').innerHTML = `
+  // ===== 見た目 =====
+  $id('appearance').innerHTML = `
     <h3>見た目</h3>
     <textarea id="edit-appearance" class="edit-field textarea">${escapeHtml(data.appearance||'')}</textarea>
-    <div id="appearance-error" class="field-error" style="display:none;">1000文字以内で入力してください。</div>
   `;
-  document.getElementById('memo').innerHTML = `
+  $id('edit-appearance')?.addEventListener('input', e=>{
+    data.appearance = e.target.value; refreshSaveState();
+  });
+
+  // ===== メモ =====
+  $id('memo').innerHTML = `
+    <h3>メモ</h3>
     <textarea id="edit-memo" class="edit-field textarea">${escapeHtml(data.memo||'')}</textarea>
-    <div id="memo-error" class="field-error" style="display:none;">1000文字以内で入力してください。</div>
   `;
-  
-  $id('edit-appearance')?.addEventListener('input', e=>{ data.appearance=e.target.value; refreshSaveState(); });
-  $id('edit-memo')?.addEventListener('input', e=>{ data.memo=e.target.value; refreshSaveState(); });
+  $id('edit-memo')?.addEventListener('input', e=>{
+    data.memo = e.target.value; refreshSaveState();
+  });
 
 }
-
-// 任意のCSSカラー文字列 → #rrggbb（失敗時は空文字）
-function toHexColor(value){
-  if(!value) return '';
-  const d = document.createElement('div');
-  d.style.color = value; // ブラウザに解決させる
-  document.body.appendChild(d);
-  const c = getComputedStyle(d).color; // rgb(r,g,b)
+// 24色の定義（ラベル → #hex）
+const COLOR_24 = [
+  ['','—選択してください—'],
+  ['#000000','黒'],['#808080','グレー'],['#FFFFFF','白'],
+  ['#FF0000','赤'],['#FF7F00','オレンジ'],['#FFFF00','黄'],
+  ['#9ACD32','黄緑'],['#00FF00','ライム'],['#008000','緑'],
+  ['#00FFFF','シアン'],['#00CED1','ターコイズ'],['#40E0D0','エメラルド'],
+  ['#87CEEB','スカイブルー'],['#0000FF','青'],['#000080','ネイビー'],
+  ['#4B0082','インディゴ'],['#800080','紫'],['#8A2BE2','ブルーバイオレット'],
+  ['#FF00FF','マゼンタ'],['#FF69B4','ピンク'],
+  ['#A52A2A','茶'],['#8B4513','濃い茶'],
+  ['#FFD700','ゴールド'],['#F5DEB3','小麦色'],
+];
+// 任意のCSS色を #rrggbb に正規化（失敗時は ''）
+function toHexColor(v){
+  const s = (v||'').toString().trim(); if(!s) return '';
+  const d = document.createElement('div'); d.style.color = s; document.body.appendChild(d);
+  const m = getComputedStyle(d).color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
   document.body.removeChild(d);
-  const m = c.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
   if(!m) return '';
-  const hex = [m[1],m[2],m[3]].map(n => Number(n).toString(16).padStart(2,'0')).join('');
-  return `#${hex}`;
+  return '#'+[m[1],m[2],m[3]].map(n=>(+n).toString(16).padStart(2,'0')).join('').toUpperCase();
 }
 
 // 空欄なら "--調査中--" に置換
@@ -458,7 +471,6 @@ function validateEdited(data){
   const errors={};
   // type=color は常に #rrggbb を返す。空欄扱いは保存時に "--調査中--" へ置換。
   const color = (data.profile?.['イメージカラー']||'');
-  if (color && !/^#[0-9a-f]{6}$/i.test(color)) errors.color='色の形式が不正です（#rrggbb）';
   if ((data.appearance||'').length>1000) errors.appearance='1000文字以内で入力してください。';
   if ((data.memo||'').length>1000) errors.memo='1000文字以内で入力してください。';
 
