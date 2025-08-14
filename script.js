@@ -7,7 +7,7 @@ let keyword = '';
 let tempEdited = null; // 編集ワーク
 let statusFilter = null;//調査状況フィルタ（null | 'wip' | 'done'）
 let adminSecret = ''; // 入力された管理パスワードを保持（X-Admin-Secretに使う）
-
+const $id = (id) => document.getElementById(id);  // 衝突しにくいIDヘルパ
 
 // ====== helpers (images / bg / fallback) ======
 function imgSrcFor(id){ return `images/${id}.png`; }
@@ -319,8 +319,13 @@ let isEditing = false;
 function enterEditMode(){
   isEditing = true;
   document.body.classList.add('is-editing');
+  // まだリスト表示なら、詳細ビューを開く（編集UIを出す前提を整える）
+  const detail = document.getElementById('detail-view');
+  if (detail && detail.classList.contains('hidden')) {
+    showDetail();
+  }
   tempEdited = JSON.parse(JSON.stringify(filteredCharacters[currentIndex]));
-  if (!document.getElementById('detail-view').classList.contains('hidden')) renderEditableFields();
+  renderEditableFields(); // ← 詳細が開いている前提で必ず描画
   const btn = document.getElementById('edit-btn'); if (btn) btn.textContent = '編集終了';
   document.getElementById('edit-actions').hidden = false;
   refreshSaveState();
@@ -393,17 +398,16 @@ document.getElementById('profile').innerHTML = `
   <div id="color-error" class="field-error" style="display:none;"></div>
 `;
 
-  // 変更ハンドラ
-  const $id = id=>document.getElementById(id);
-  $('edit-home')?.addEventListener('input', e=>{
+  // 変更ハンドラ（$idに統一）
+  $id('edit-home')?.addEventListener('input', e=>{
     data.profile['住んでいるところ'] = e.target.value;
     refreshSaveState();
   });
-  $('edit-like')?.addEventListener('input', e=>{
+  $id('edit-like')?.addEventListener('input', e=>{
     data.profile['好きなもの・こと'] = e.target.value;
     refreshSaveState();
   });
-  $('edit-color')?.addEventListener('input', e=>{
+  $id('edit-color')?.addEventListener('input', e=>{
     data.profile['イメージカラー'] = e.target.value; // #rrggbb を保持
     const dot = $id('edit-color-dot'); if(dot) dot.style.background = e.target.value;
     refreshSaveState();
@@ -418,13 +422,10 @@ document.getElementById('profile').innerHTML = `
     <textarea id="edit-memo" class="edit-field textarea">${escapeHtml(data.memo||'')}</textarea>
     <div id="memo-error" class="field-error" style="display:none;">1000文字以内で入力してください。</div>
   `;
+  
+  $id('edit-appearance')?.addEventListener('input', e=>{ data.appearance=e.target.value; refreshSaveState(); });
+  $id('edit-memo')?.addEventListener('input', e=>{ data.memo=e.target.value; refreshSaveState(); });
 
-  const $ = id=>document.getElementById(id);
-  $('edit-home')?.addEventListener('input', e=>{ data.profile['住んでいるところ']=e.target.value; refreshSaveState(); });
-  $('edit-like')?.addEventListener('input', e=>{ data.profile['好きなもの・こと']=e.target.value; refreshSaveState(); });
-  $('edit-color')?.addEventListener('change', e=>{ data.profile['イメージカラー']=e.target.value; refreshSaveState(); });
-  $('edit-appearance')?.addEventListener('input', e=>{ data.appearance=e.target.value; refreshSaveState(); });
-  $('edit-memo')?.addEventListener('input', e=>{ data.memo=e.target.value; refreshSaveState(); });
 }
 
 // 任意のCSSカラー文字列 → #rrggbb（失敗時は空文字）
@@ -488,7 +489,48 @@ function buildPayload(){
   }
   return { characters: out };
 }
+// PWを要求してadminSecretをセット。モーダルがなければpromptで代替
+function requestAdminSecret(){
+  return new Promise((resolve, reject)=>{
+    if (adminSecret) return resolve(adminSecret);
 
+    const modal  = $id('pw-modal') || $id('password-modal');
+    const input  = $id('pw-input') || $id('password-input');
+    const okBtn  = $id('pw-ok')    || $id('password-ok');
+    const cancel = $id('pw-cancel')|| $id('password-cancel');
+
+    if (modal && input && okBtn){
+      // モーダル方式
+      modal.style.display = 'block';
+      input.value = '';
+      input.focus();
+
+      const onOk = () => {
+        const v = input.value.trim();
+        if(!v){ ( $id('pw-error') || {} ).textContent = 'パスワードを入力してください'; return; }
+        adminSecret = v;
+        cleanup();
+        resolve(adminSecret);
+      };
+      const onCancel = () => { cleanup(); reject('cancel'); };
+
+      function cleanup(){
+        okBtn.removeEventListener('click', onOk);
+        cancel?.removeEventListener('click', onCancel);
+        modal.style.display = 'none';
+      }
+
+      okBtn.addEventListener('click', onOk);
+      cancel?.addEventListener('click', onCancel);
+    } else {
+      // フォールバック：prompt
+      const s = window.prompt('管理パスワードを入力');
+      if (!s) return reject('empty');
+      adminSecret = s.trim();
+      resolve(adminSecret);
+    }
+  });
+}
 // ====== header wiring & boot ======
 function wireHeaderHandlers(){
   const buttons = document.querySelectorAll('.filter-buttons button');
