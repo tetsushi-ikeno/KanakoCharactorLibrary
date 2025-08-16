@@ -327,11 +327,11 @@ body.is-editing .grid-item { border-style: dashed; }
   z-index: 2000;
 }
 .modal {
-  width: min(460px, 92vw);
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000; /* 既存と整合 */
 }
 .modal h3 { margin: 0 0 8px; }
 .modal p { margin: 6px 0; }
@@ -372,10 +372,7 @@ body.is-editing .grid-item { border-style: dashed; }
   z-index: 1999;
 }
 
-/* 既存 .modal はそのままでOK。z-indexだけ一応明示 */
-.modal {
-  z-index: 2000;
-}
+
 /* === 編集アクション（右下） === */
 .edit-actions{
   position: fixed;

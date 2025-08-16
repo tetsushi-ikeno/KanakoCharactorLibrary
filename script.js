@@ -123,7 +123,7 @@ function renderList(list){
 function loadCharacter(index=0){
   const data = filteredCharacters[index];
   if (!data) return;
-
+  const prof = data.profile || {};
   const mainImg = document.getElementById('character-image');
   mainImg.src = imgSrcFor(data.id);
   setFallbackOnError(mainImg);
@@ -136,10 +136,10 @@ function loadCharacter(index=0){
 
 document.getElementById('profile').innerHTML = `
   <h3>プロフィール</h3>
-  <p>住んでいるところ: ${data.profile['住んでいるところ']||''}</p>
-  <p>好きなもの・こと: ${data.profile['好きなもの・こと']||''}</p>
+  <p>住んでいるところ: ${prof['住んでいるところ']||''}</p>
+  <p>好きなもの・こと: ${prof['好きなもの・こと']||''}</p>
   <p>イメージカラー:
-    <span class="color-dot" style="background:${(data.profile['イメージカラー']||'').toLowerCase()}"></span>
+    <span class="color-dot" style="background:${(prof['イメージカラー']||'').toLowerCase()}"></span>
   </p>`;
 
   document.getElementById('appearance').innerHTML = `
@@ -608,10 +608,21 @@ document.getElementById('edit-save')?.addEventListener('click', async ()=>{
     const r = await apiPatchCharacter(payload);
     console.log('PATCH ok', r);
 
-    // ローカル状態も更新
-    const i = characters.findIndex(c=>c.id===tempEdited.id);
-    if(i>=0){ characters[i] = JSON.parse(JSON.stringify(payload)); }
+// ローカル状態を“深いマージ”で更新（name等の既存プロパティを保持）
+    const id = tempEdited.id;
+    const i = characters.findIndex(c => c.id === id);
+    if (i >= 0) {
+      const merged = {
+        ...characters[i],
+        ...payload,
+       profile: { ...(characters[i].profile || {}), ...(payload.profile || {}) }
+      };
+      characters[i] = merged;
+    }
+    // 並べ替え後も同じキャラを表示し続ける
     filteredCharacters = sortCharacters(characters);
+    const newIdx = filteredCharacters.findIndex(c => c.id === id);
+    if (newIdx >= 0) currentIndex = newIdx;
     exitEditMode();
     showDetail(); // 再描画
     alert('保存しました。');

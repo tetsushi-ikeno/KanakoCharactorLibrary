@@ -1,0 +1,15 @@
+git status
+
+# 作業ブランチへ（main 想定）
+git switch main
+
+# サーバーの最新を取り込む（rebase 推奨）
+git pull --rebase origin main
+
+#データをローカルで変更する
+
+# 必要な変更を加える → 追加・コミット・プッシュ
+git add -A
+git commit -m "edit: キャラ更新（No.009 住まい/色 など）"
+git push origin main
+
