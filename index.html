@@ -108,14 +108,18 @@
     <button id="edit-cancel" class="btn-secondary">キャンセル</button>
     <button id="edit-save" class="btn-primary">保存</button>
   </div>
-  <div class="modal" id="pw-modal" hidden role="dialog" aria-modal="true" aria-labelledby="pw-title">
-    <h3 id="pw-title">管理パスワード</h3>
-    <p class="modal-desc">編集モードに入るにはパスワードを入力してください。</p>
-    <input type="password" id="pw-input" placeholder="パスワード" />
-    <p id="pw-error" class="modal-error" hidden>パスワードが違います。</p>
-    <div class="modal-actions">
-      <button id="pw-cancel" class="btn-secondary">キャンセル</button>
-      <button id="pw-ok" class="btn-primary">OK</button>
+  <!-- 管理パスワード モーダル -->
+  <div id="pw-modal" class="modal-layer" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <h3 class="modal-title">管理パスワード</h3>
+      <p class="modal-desc">編集モードに入るにはパスワードを入力してください。</p>
+      <input id="pw-input" type="password" class="modal-input" placeholder="パスワード" />
+      <div id="pw-error" class="field-error" hidden></div>
+      <div class="modal-actions">
+        <button id="pw-cancel" class="btn-outline">キャンセル</button>
+        <button id="pw-ok" class="btn-primary">OK</button>
+      </div>
     </div>
   </div>
 </body>

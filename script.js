@@ -501,89 +501,52 @@ function buildPayload(){
   }
   return { characters: out };
 }
-// PWを要求してadminSecretをセット。モーダルがなければpromptで代替
-function requestAdminSecret(){
-  return new Promise((resolve, reject)=>{
-    if (adminSecret) return resolve(adminSecret);
 
-    const modal  = $id('pw-modal') || $id('password-modal');
-    const input  = $id('pw-input') || $id('password-input');
-    const okBtn  = $id('pw-ok')    || $id('password-ok');
-    const cancel = $id('pw-cancel')|| $id('password-cancel');
-
-    if (modal && input && okBtn){
-      // モーダル方式
-      modal.style.display = 'block';
-      input.value = '';
-      input.focus();
-
-      const onOk = () => {
-        const v = input.value.trim();
-        if(!v){ ( $id('pw-error') || {} ).textContent = 'パスワードを入力してください'; return; }
-        adminSecret = v;
-        cleanup();
-        resolve(adminSecret);
-      };
-      const onCancel = () => { cleanup(); reject('cancel'); };
-
-      function cleanup(){
-        okBtn.removeEventListener('click', onOk);
-        cancel?.removeEventListener('click', onCancel);
-        modal.style.display = 'none';
-      }
-
-      okBtn.addEventListener('click', onOk);
-      cancel?.addEventListener('click', onCancel);
-    } else {
-      // フォールバック：prompt
-      const s = window.prompt('管理パスワードを入力');
-      if (!s) return reject('empty');
-      adminSecret = s.trim();
-      resolve(adminSecret);
-    }
-  });
-}
 // ====== header wiring & boot ======
 function wireHeaderHandlers(){
-  const buttons = document.querySelectorAll('.filter-buttons button');
-  buttons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      buttons.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      filterBySeries(btn.textContent==='全シリーズ' ? 'all' : btn.textContent);
-    });
-  });
-  document.querySelector('.search-box').addEventListener('input', e=>searchCharacter(e.target.value));
+const editBtn    = document.getElementById('edit-btn');
+const modalLayer = document.getElementById('pw-modal');        // id="pw-modal"（.modal-layer）
+const pwInput    = document.getElementById('pw-input');
+const pwOk       = document.getElementById('pw-ok');
+const pwCancel   = document.getElementById('pw-cancel');
+const pwError    = document.getElementById('pw-error');
+const backdrop   = modalLayer?.querySelector('.modal-backdrop');
 
-  // 編集モーダル
-  const editBtn    = document.getElementById('edit-btn');
-  const pwBackdrop = document.getElementById('pw-backdrop');
-  const pwModal    = document.getElementById('pw-modal');
-  const pwInput    = document.getElementById('pw-input');
-  const pwOk       = document.getElementById('pw-ok');
-  const pwCancel   = document.getElementById('pw-cancel');
-  const pwError    = document.getElementById('pw-error');
+function openPwModal(){
+  if (!modalLayer) return;
+  pwError.hidden = true;
+  pwInput.value = '';
+  modalLayer.hidden = false;
+  modalLayer.classList.add('show');         // ← CSS側の .modal-layer.show { display:block }
+  setTimeout(()=>pwInput.focus(),0);
+}
+function closePwModal(){
+  if (!modalLayer) return;
+  modalLayer.classList.remove('show');
+  modalLayer.hidden = true;
+}
 
-  editBtn?.addEventListener('click', ()=>{
-    if (isEditing){ exitEditMode(); return; }
-    pwError.hidden = true; pwInput.value=''; pwBackdrop.hidden=false; pwModal.hidden=false; setTimeout(()=>pwInput.focus(),0);
-  });
-  function closePwModal(){ pwBackdrop.hidden=true; pwModal.hidden=true; }
-  pwCancel?.addEventListener('click', closePwModal);
-  pwBackdrop?.addEventListener('click', closePwModal);
-  pwOk?.addEventListener('click', ()=>{
-    if (!pwInput.value.trim()){
-      pwError.hidden = false;
-      pwError.textContent = 'パスワードを入力してください。';
-      return;
-    }
-    adminSecret = pwInput.value.trim(); // ← 入力を保持（ソースにハードコードしない）
-    pwError.hidden = true;
-    closePwModal();
-    enterEditMode();
-  });
-  pwInput?.addEventListener('keydown', e=>{ if(e.key==='Enter') pwOk.click(); if(e.key==='Escape') closePwModal(); });
-
+editBtn?.addEventListener('click', ()=>{
+  if (isEditing){ exitEditMode(); return; }
+  openPwModal();
+});
+pwCancel?.addEventListener('click', closePwModal);
+backdrop?.addEventListener('click', closePwModal);
+pwOk?.addEventListener('click', ()=>{
+  const v = pwInput.value.trim();
+  if (!v){
+    pwError.hidden = false;
+    pwError.textContent = 'パスワードを入力してください。';
+    return;
+  }
+  adminSecret = v;
+  closePwModal();
+  enterEditMode();
+});
+pwInput?.addEventListener('keydown', e=>{
+  if (e.key === 'Enter') pwOk.click();
+  if (e.key === 'Escape') closePwModal();
+});
   // 保存/取消（モック）
 document.getElementById('edit-save')?.addEventListener('click', async ()=>{
   if(!tempEdited) return;
