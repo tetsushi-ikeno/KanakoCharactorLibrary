@@ -514,41 +514,46 @@ function buildPayload(){
 // ====== header wiring & boot ======
 function wireHeaderHandlers(){
 const editBtn    = document.getElementById('edit-btn');
-const modalLayer = document.getElementById('pw-modal');        // id="pw-modal"（.modal-layer）
+const modalLayer = document.getElementById('pw-modal');        // .modal-layer
 const pwInput    = document.getElementById('pw-input');
 const pwOk       = document.getElementById('pw-ok');
 const pwCancel   = document.getElementById('pw-cancel');
 const pwError    = document.getElementById('pw-error');
 const backdrop   = modalLayer?.querySelector('.modal-backdrop');
+const panel      = modalLayer?.querySelector('.modal-panel');
 
 function openPwModal(){
   if (!modalLayer) return;
-  pwError.hidden = true;
-  pwInput.value = '';
+  pwError.hidden = true; pwInput.value = '';
   modalLayer.hidden = false;
-  modalLayer.classList.add('show');         // ← CSS側の .modal-layer.show { display:block }
+  modalLayer.classList.add('show');
   setTimeout(()=>pwInput.focus(),0);
 }
 function closePwModal(){
-  const pwBackdrop = document.getElementById('pw-backdrop');
-  const pwModal    = document.getElementById('pw-modal');
-  if (pwBackdrop) pwBackdrop.hidden = true;
-  if (pwModal)    pwModal.hidden    = true;
+  if (!modalLayer) return;
+  modalLayer.classList.remove('show');
+  modalLayer.hidden = true;
 }
 
-editBtn?.addEventListener('click', ()=>{
+// ✎ → モーダルを開く
+document.getElementById('edit-btn')?.addEventListener('click', ()=>{
   if (isEditing){ exitEditMode(); return; }
   openPwModal();
 });
+
+// ✅ バックドロップでのみ閉じる（iPad向けに touchstart も）
+backdrop?.addEventListener('click',      closePwModal);
+backdrop?.addEventListener('touchstart', closePwModal, {passive:true});
+
+// ✋ パネル内のクリック/タップはバブリングを止める（誤閉じ防止）
+panel?.addEventListener('click',       e=>e.stopPropagation());
+panel?.addEventListener('touchstart',  e=>e.stopPropagation(), {passive:true});
+
+// ボタン類
 pwCancel?.addEventListener('click', closePwModal);
-pwBackdrop?.addEventListener('click', closePwModal);
 pwOk?.addEventListener('click', ()=>{
   const v = pwInput.value.trim();
-  if (!v){
-    pwError.hidden = false;
-    pwError.textContent = 'パスワードを入力してください。';
-    return;
-  }
+  if (!v){ pwError.hidden = false; pwError.textContent = 'パスワードを入力してください。'; return; }
   adminSecret = v;
   closePwModal();
   enterEditMode();
@@ -625,6 +630,17 @@ document.getElementById('edit-save')?.addEventListener('click', async ()=>{
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
+  // --- build 表示（最初に実行） ---
+  const build = document.querySelector('meta[name="app-build"]')?.content || 'dev';
+  let pill = document.getElementById('version-pill');
+  if (!pill) { // 念のため無ければ作る
+    pill = document.createElement('div');
+    pill.id = 'version-pill';
+    pill.className = 'version-pill';
+    document.body.appendChild(pill);
+  }
+  pill.textContent = `build: ${build}`;
+  console.log('%cAPP BUILD', 'color:white;background:#333;padding:2px 6px;border-radius:4px', build);
   loadData();
   loadPalettes();
   document.querySelector('.back-button').addEventListener('click', showList);

@@ -3,9 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="app-build" content="2025-08-20-01">
+
   <title>キャラ図鑑</title>
   <!-- キャッシュ回避用のバージョンパラメータを付与 -->
-  <link rel="stylesheet" href="style.css?v=20250820">
+  <link rel="stylesheet" href="style.css?v=2025-08-20-01">
 </head>
 <body>
   <!-- ヘッダー -->
@@ -67,7 +69,6 @@
   </div>
 </section>
 
-
   <!-- 詳細ビュー -->
   <section id="detail-view" class="hidden">
     <!-- 上段 -->
@@ -101,8 +102,9 @@
     </section>
   </section>
 
-  <script type="module" src="script.js"></script>
+  <script defer src="script.js?v=2025-08-20-01"></script>
 
+  <div id="version-pill" class="version-pill"></div>
   <div class="modal-backdrop" id="pw-backdrop" hidden></div>
   <div class="edit-actions" id="edit-actions" hidden>
     <button id="edit-cancel" class="btn-secondary">キャンセル</button>
