@@ -677,6 +677,14 @@ document.addEventListener('DOMContentLoaded', ()=>{
   }
   pill.textContent = `build: ${build}`;
   console.log('%cAPP BUILD', 'color:white;background:#333;padding:2px 6px;border-radius:4px', build);
+
+  pill.style.cursor = 'pointer';
+  pill.title = 'クリックでこのビルド番号をクエリに付けて再読み込み';
+  pill.addEventListener('click', () => {
+    const url = new URL(location.href);
+    url.searchParams.set('b', build); // ← index.html 自体のURLを変える＝CDNも新規取得
+    location.href = url.toString();
+  });
   loadData();
   loadPalettes();
   document.querySelector('.back-button').addEventListener('click', showList);
