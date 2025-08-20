@@ -1,129 +1,69 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="app-build" content="2025-08-20-03">
-  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-  <meta http-equiv="Pragma"        content="no-cache">
-  <meta http-equiv="Expires"       content="0">
-  <title>キャラ図鑑</title>
-  <!-- キャッシュ回避用のバージョンパラメータを付与 -->
-  <link rel="stylesheet" href="style.css?v=2025-08-20-03">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="app-build" content="2025-08-21-01" />
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>キャラ図鑑</title>
+<link rel="stylesheet" href="style.css?v=2025-08-21-01" />
 </head>
 <body>
-  <!-- ヘッダー -->
-  <header class="header">
-    <div class="header-inner">
-      <div class="header-left">
-        <h1>キャラ図鑑</h1>
-        <div class="filter-buttons">
-          <button class="active">全シリーズ</button>
-          <button>ねこニャ町</button>
-          <button>四角丸町</button>
-          <button>にじいろ学校</button>
-        </div>
-        <button id="pending-toggle" class="pending-pill" aria-pressed="false" title="調査中だけ表示">調査中</button>
+<!-- ヘッダー -->
+<header class="header">
+<div class="header-inner">
+<div class="header-left">
+<h1>キャラ図鑑</h1>
+<!-- チップ型のシリーズフィルタ（横スクロール） -->
+<div class="series-filter" id="series-filter" role="tablist" aria-label="シリーズで絞り込み">
+<button class="chip is-active" data-series="all" role="tab" aria-selected="true">全シリーズ</button>
+<button class="chip" data-series="ねこニャ町" role="tab" aria-selected="false">ねこニャ町</button>
+<button class="chip" data-series="四角丸町" role="tab" aria-selected="false">四角丸町</button>
+<button class="chip" data-series="にじいろ学校" role="tab" aria-selected="false">にじいろ学校</button>
+<button class="chip" data-series="investigating" role="tab" aria-selected="false">調査中</button>
+</div>
+<button id="pending-toggle" class="pending-pill" aria-pressed="false" title="調査中だけ表示">調査中</button>
+</div>
+<div class="header-right">
+<input type="text" id="search-box" class="search-box" placeholder="キーワード検索..." />
+<button class="palette-btn" id="palette-btn" aria-label="テーマカラー">🎨</button>
+<div class="palette-panel" id="palette-panel" hidden></div>
+<button class="edit-btn" id="edit-btn" aria-label="編集モード">✎</button>
+</div>
+</div>
+</header>
 
-      </div>
-      <div class="header-right">
-        <input type="text" class="search-box" placeholder="キーワード検索...">
-        <button class="palette-btn" id="palette-btn" aria-label="テーマカラー">🎨</button>
-        <div class="palette-panel" id="palette-panel" hidden></div>
-        <button class="edit-btn" id="edit-btn" aria-label="編集モード">✎</button>
-      </div>
-    </div>
-  </header>
+
 <!-- ▼▼ 調査状況サマリーバー ▼▼ -->
 <section class="summary-bar" role="region" aria-label="調査状況">
-  <div class="summary-inner">
-    <div class="summary-head">
-      <span class="summary-title">調査状況</span>
-      <div class="summary-pills">
-        <button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
-          <span class="dot dot-done"></span><span class="pill-label">調査済</span>
-          <b id="sum-count-done" class="pill-count">0</b>
-        </button>
-        <button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
-          <span class="dot dot-wip"></span><span class="pill-label">調査中</span>
-          <b id="sum-count-wip" class="pill-count">0</b>
-        </button>
-      </div>
-    </div>
-
-    <div class="progressbar" aria-hidden="true">
-      <div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
-      <div id="sum-bar-wip"  class="bar-seg bar-wip"  style="width:0%"></div>
-    </div>
-
-    <div class="summary-numbers">
-      調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
-      調査中 <b id="sum-txt-wip">0</b>
-      <button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
-    </div>
-  </div>
+<div class="summary-inner">
+<div class="summary-head">
+<span class="summary-title">調査状況</span>
+<div class="summary-pills">
+<button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
+<span class="dot dot-done"></span><span class="pill-label">調査済</span>
+<b id="sum-count-done" class="pill-count">0</b>
+</button>
+<button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
+<span class="dot dot-wip"></span><span class="pill-label">調査中</span>
+<b id="sum-count-wip" class="pill-count">0</b>
+</button>
+</div>
+</div>
+<div class="progressbar" aria-hidden="true">
+<div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
+<div id="sum-bar-wip" class="bar-seg bar-wip" style="width:0%"></div>
+</div>
+<div class="summary-numbers">
+調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
+調査中 <b id="sum-txt-wip">0</b>
+<button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
+</div>
+</div>
 </section>
 <!-- ▲▲ 調査状況サマリーバー ▲▲ -->
-<!-- 一覧ビュー -->
-<section id="list-view">
-  <div class="list-container" id="list-container">
-    <!-- JSで一覧カードを生成 -->
-  </div>
-</section>
 
-  <!-- 詳細ビュー -->
-  <section id="detail-view" class="hidden">
-    <!-- 上段 -->
-    <section class="section-top">
-      <button class="nav-button prev">←</button>
-      <div class="grid-container">
-        <div class="grid-item image-box">
-          <img id="character-image" src="" alt="キャラ画像">
-        </div>
-        <div class="grid-item summary-card" id="character-summary">
-          <!-- JSで詳細情報を挿入 -->
-        </div>
-      </div>
-      <button class="nav-button next">→</button>
-    </section>
 
-    <!-- 中段 -->
-    <section class="section-middle">
-      <div class="grid-container">
-        <div class="grid-item" id="profile"></div>
-        <div class="grid-item" id="appearance"></div>
-      </div>
-    </section>
-
-    <!-- 下段 -->
-    <section class="section-bottom">
-      <div class="grid-container">
-        <div class="memo-card" id="memo"></div>
-      </div>
-      <button class="back-button">← 一覧に戻る</button>
-    </section>
-  </section>
-
-  <script defer src="script.js?v=2025-08-20-03"></script>
-
-  <div id="version-pill" class="version-pill"></div>
-  <div class="modal-backdrop" id="pw-backdrop" hidden></div>
-  <div class="edit-actions" id="edit-actions" hidden>
-    <button id="edit-cancel" class="btn-secondary">キャンセル</button>
-    <button id="edit-save" class="btn-primary">保存</button>
-  </div>
-  <!-- 管理パスワード モーダル -->
-  <div id="pw-modal" class="modal-layer" hidden>
-    <div class="modal-backdrop"></div>
-    <div class="modal-panel">
-      <h3 class="modal-title">管理パスワード</h3>
-      <p class="modal-desc">編集モードに入るにはパスワードを入力してください。</p>
-      <input id="pw-input" type="password" class="modal-input" placeholder="パスワード" />
-      <div id="pw-error" class="field-error" hidden></div>
-      <div class="modal-actions">
-        <button id="pw-cancel" class="btn-outline">キャンセル</button>
-        <button id="pw-ok" class="btn-primary">OK</button>
-      </div>
-    </div>
-  </div>
-</body>
+</html>
