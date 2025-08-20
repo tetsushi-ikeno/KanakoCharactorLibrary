@@ -24,20 +24,61 @@ function trySetSectionBg(id){
   test.onerror = () => { sec.style.backgroundImage = ''; };
   test.src = url;
 }
-function isInvestigating(chara){
-  const NEEDLE = '調査中'; // ←ココだけでOK（--調査中-- も ーー調査中ーー も拾える）
-  // 文字列候補を全部かき集めてチェック
-  const arr = [];
-  if (chara.name) arr.push(chara.name);
-  if (chara.series) arr.push(Array.isArray(chara.series) ? chara.series.join('、') : chara.series);
-  if (chara.appearance) arr.push(chara.appearance);
-  if (chara.memo) arr.push(chara.memo);
-  if (chara.profile) {
-    Object.values(chara.profile).forEach(v => { if (typeof v === 'string') arr.push(v); });
-  }
-  return arr.some(s => typeof s === 'string' && s.includes(NEEDLE));
+const PLACEHOLDER = '--調査中--';
+function isPending(c){
+  const p = c.profile || {};
+  const vals = [
+    p['住んでいるところ'],
+    p['好きなもの・こと'],
+    p['イメージカラー'],
+    c.appearance,
+    c.memo
+  ];
+  return vals.some(v => {
+    const s = (v ?? '').toString().trim();
+    return s === '' || s === PLACEHOLDER;
+  });
 }
 
+async function reloadDataFresh(preserveId){
+  const res = await fetch(`${API_ORIGIN}/api/characters`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const list = await res.json();
+
+  // サーバーの真実を採用
+  characters = Array.isArray(list) ? list : [];
+  filteredCharacters = sortCharacters(characters);
+
+  // 同じキャラを選択し続ける
+  if (preserveId){
+    const idx = filteredCharacters.findIndex(c => c.id === preserveId);
+    if (idx >= 0) currentIndex = idx;
+  }
+
+  // 一覧・カウント・フィルタを再適用（あなたのプロジェクトの関数名に合わせて）
+  if (typeof applyFilters === 'function') applyFilters();
+}
+function showToast(msg, type='ok'){
+  // 1回だけスタイル注入
+  if (!document.getElementById('toast-style')){
+    const style = document.createElement('style');
+    style.id = 'toast-style';
+    style.textContent = `
+      .toast{position:fixed;right:16px;top:16px;z-index:3000;display:flex;flex-direction:column;gap:8px}
+      .toast-item{padding:10px 12px;border-radius:10px;color:#fff;box-shadow:0 6px 20px rgba(0,0,0,.2);font-size:14px}
+      .toast-ok{background:#16a34a}.toast-err{background:#ef4444}
+    `;
+    document.head.appendChild(style);
+  }
+  let root = document.querySelector('.toast');
+  if(!root){ root = document.createElement('div'); root.className='toast'; document.body.appendChild(root); }
+  const el = document.createElement('div');
+  el.className = `toast-item toast-${type==='err'?'err':'ok'}`;
+  el.textContent = msg;
+  root.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-6px)'; }, 1600);
+  setTimeout(()=>{ el.remove(); }, 2100);
+}
 // ====== sort: Series -> No ======
 const SERIES_ORDER = { 'ねこニャ町':0, '四角丸町':1, 'にじいろ学校':2 };
 function sortCharacters(arr){
@@ -180,10 +221,7 @@ function applyFilters(){
       ((c.appearance||'').toLowerCase().includes(kw)) ||
       (c.profile && Object.values(c.profile).some(v => String(v).toLowerCase().includes(kw)));
 
-    const statusOK =
-      !statusFilter ||
-      (statusFilter === 'wip'  ? isInvestigating(c) : !isInvestigating(c));
-
+    const statusOK = !statusFilter || (statusFilter === 'wip' ? isPending(c) : !isPending(c));
     return hitSeries && kwHit && statusOK;
   });
   filteredCharacters = sortCharacters(filteredCharacters);
@@ -196,7 +234,7 @@ function renderSummaryBar(){
 
   // 集計（全体ベース）
   const total = characters.length;
-  const done  = characters.filter(c => !isInvestigating(c)).length;
+  const done  = characters.filter(c => !isPending(c)).length;
   const wip   = total - done;
   const rate  = total ? Math.round((done/total)*100) : 0;
 
@@ -567,7 +605,11 @@ document.getElementById('edit-save')?.addEventListener('click', async ()=>{
   if(!tempEdited) return;
   const {ok} = validateEdited(tempEdited);
   if(!ok){ alert('未入力や不正な入力があります。赤枠をご確認ください。'); return; }
-
+  const btn = document.getElementById('edit-save');
+  const prevLabel = btn.textContent;
+  btn.disabled = true;
+  btn.setAttribute('aria-busy','true');
+  btn.textContent = '保存中…';
   // 空欄は "--調査中--" に置換してpayloadを構築
   const p = tempEdited.profile || {};
   const payload = {
@@ -586,28 +628,22 @@ document.getElementById('edit-save')?.addEventListener('click', async ()=>{
     const r = await apiPatchCharacter(payload);
     console.log('PATCH ok', r);
 
-// ローカル状態を“深いマージ”で更新（name等の既存プロパティを保持）
+    // サーバーの真実で再同期（保存競合/遅延も吸収）
     const id = tempEdited.id;
-    const i = characters.findIndex(c => c.id === id);
-    if (i >= 0) {
-      const merged = {
-        ...characters[i],
-        ...payload,
-       profile: { ...(characters[i].profile || {}), ...(payload.profile || {}) }
-      };
-      characters[i] = merged;
-    }
-    // 並べ替え後も同じキャラを表示し続ける
-    filteredCharacters = sortCharacters(characters);
-    const newIdx = filteredCharacters.findIndex(c => c.id === id);
-    if (newIdx >= 0) currentIndex = newIdx;
+    await reloadDataFresh(id);
     exitEditMode();
-    showDetail(); // 再描画
-    alert('保存しました。');
+    showDetail(); // 最新データで詳細を描画
+    // 一覧へ戻った時のカウントも最新になります
+    showToast('保存しました');
+    
   }catch(e){
     console.error(e);
-    if(String(e).includes('401')) alert('パスワードが違います。（X-Admin-Secret）');
-    else alert('保存に失敗しました。\n' + e.message);
+    if(String(e).includes('401')) showToast('パスワードが違います','err');
+    else showToast('保存に失敗しました','err');
+  }finally{
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.textContent = prevLabel;
   }
 });
   document.getElementById('edit-cancel')?.addEventListener('click', ()=>{

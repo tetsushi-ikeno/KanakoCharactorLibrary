@@ -62,11 +62,9 @@ module.exports = async (req, res) => {
 
   try {
     if (req.method === 'GET') {
-      // 速いのでGETはraw経由
-      const r = await fetch(RAW_URL);
-      if (!r.ok) throw new Error(`GitHub raw ${r.status}`);
-      const text = await r.text();
-      const data = text ? JSON.parse(text) : [];
+      // 常に最新（CDNを回避）
+      const { data } = await getShaAndData(); // ← GitHub Contents API
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
       return json(res, 200, data);
     }
 
