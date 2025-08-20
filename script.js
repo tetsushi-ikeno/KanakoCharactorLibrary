@@ -381,10 +381,12 @@ function renderEditableFields(){
 
   // ===== プロフィール（住・好き・色 24色セレクト） =====
   const nowHex = toHexColor(data.profile['イメージカラー']);
-  const options = COLOR_24.map(([hex,label])=>{
+  const options = COLOR_24.map(([hex,en,ja])=>{
     const sel = (hex && nowHex && hex.toUpperCase()===nowHex) ? ' selected' : '';
-    return `<option value="${hex}"${sel}>${label}</option>`;
+    const text = en + (ja ? ` / ${ja}` : '');
+    return `<option value="${hex}"${sel}>${text}</option>`;
   }).join('');
+
   $id('profile').innerHTML = `
     <h3>プロフィール</h3>
     <label>住んでいるところ：
@@ -393,14 +395,14 @@ function renderEditableFields(){
     <label>好きなもの・こと：
       <input id="edit-like" class="edit-field" value="${escapeHtml(data.profile['好きなもの・こと']||'')}">
     </label><br><br>
-    <label>イメージカラー：
-      <select id="edit-color" class="edit-field">${options}</select>
-      <span class="color-dot" id="edit-color-dot" style="background:${nowHex || 'transparent'}"></span>
+    <label class="color-row">イメージカラー：
+      <select id="edit-color" class="edit-field select">${options}</select>
+      <span class="color-chip" id="edit-color-dot" style="background:${nowHex || 'transparent'}"></span>
+      <span class="color-text" id="edit-color-text">${colorLabel(nowHex||'')}</span>
     </label>
   `;
 
-
-  // イベント（プロフィール）
+  // イベント
   $id('edit-home')?.addEventListener('input', e=>{
     data.profile['住んでいるところ'] = e.target.value; refreshSaveState();
   });
@@ -408,9 +410,10 @@ function renderEditableFields(){
     data.profile['好きなもの・こと'] = e.target.value; refreshSaveState();
   });
   $id('edit-color')?.addEventListener('change', e=>{
-    const hex = e.target.value;               // '' or #rrggbb
+    const hex = e.target.value;                 // '' または #rrggbb
     data.profile['イメージカラー'] = hex || '';
-    const dot = $id('edit-color-dot'); if (dot) dot.style.background = hex || 'transparent';
+    const dot  = $id('edit-color-dot');  if (dot)  dot.style.background = hex || 'transparent';
+    const text = $id('edit-color-text'); if (text) text.textContent    = colorLabel(hex||'');
     refreshSaveState();
   });
   // ===== 見た目 =====
@@ -432,19 +435,25 @@ function renderEditableFields(){
   });
 
 }
-// 24色の定義（ラベル → #hex）
+// 24色（hex, en, ja）
 const COLOR_24 = [
-  ['','—選択してください—'],
-  ['#000000','黒'],['#808080','グレー'],['#FFFFFF','白'],
-  ['#FF0000','赤'],['#FF7F00','オレンジ'],['#FFFF00','黄'],
-  ['#9ACD32','黄緑'],['#00FF00','ライム'],['#008000','緑'],
-  ['#00FFFF','シアン'],['#00CED1','ターコイズ'],['#40E0D0','エメラルド'],
-  ['#87CEEB','スカイブルー'],['#0000FF','青'],['#000080','ネイビー'],
-  ['#4B0082','インディゴ'],['#800080','紫'],['#8A2BE2','ブルーバイオレット'],
-  ['#FF00FF','マゼンタ'],['#FF69B4','ピンク'],
-  ['#A52A2A','茶'],['#8B4513','濃い茶'],
-  ['#FFD700','ゴールド'],['#F5DEB3','小麦色'],
+  ['', '— Select color —', ''],
+  ['#000000','black','黒'],['#808080','gray','グレー'],['#FFFFFF','white','白'],
+  ['#FF0000','red','赤'],['#FF7F00','orange','オレンジ'],['#FFFF00','yellow','黄'],
+  ['#9ACD32','yellowgreen','黄緑'],['#00FF00','lime','ライム'],['#008000','green','緑'],
+  ['#00FFFF','cyan','シアン'],['#00CED1','darkturquoise','ターコイズ'],['#40E0D0','turquoise','エメラルド'],
+  ['#87CEEB','skyblue','スカイブルー'],['#0000FF','blue','青'],['#000080','navy','ネイビー'],
+  ['#4B0082','indigo','インディゴ'],['#800080','purple','紫'],['#8A2BE2','blueviolet','ブルーバイオレット'],
+  ['#FF00FF','magenta','マゼンタ'],['#FF69B4','pink','ピンク'],
+  ['#A52A2A','brown','茶'],['#8B4513','saddlebrown','濃い茶'],
+  ['#FFD700','gold','ゴールド'],['#F5DEB3','wheat','小麦色'],
 ];
+// 選択中hex → "english / 日本語"
+function colorLabel(hex){
+  if(!hex) return '';
+  const hit = COLOR_24.find(([h]) => h.toUpperCase() === hex.toUpperCase());
+  return hit ? `${hit[1]}${hit[2] ? ` / ${hit[2]}` : ''}` : '';
+}
 // 任意のCSS色を #rrggbb に正規化（失敗時は ''）
 function toHexColor(v){
   const s = (v||'').toString().trim(); if(!s) return '';
@@ -521,9 +530,10 @@ function openPwModal(){
   setTimeout(()=>pwInput.focus(),0);
 }
 function closePwModal(){
-  if (!modalLayer) return;
-  modalLayer.classList.remove('show');
-  modalLayer.hidden = true;
+  const pwBackdrop = document.getElementById('pw-backdrop');
+  const pwModal    = document.getElementById('pw-modal');
+  if (pwBackdrop) pwBackdrop.hidden = true;
+  if (pwModal)    pwModal.hidden    = true;
 }
 
 editBtn?.addEventListener('click', ()=>{
@@ -531,7 +541,7 @@ editBtn?.addEventListener('click', ()=>{
   openPwModal();
 });
 pwCancel?.addEventListener('click', closePwModal);
-backdrop?.addEventListener('click', closePwModal);
+pwBackdrop?.addEventListener('click', closePwModal);
 pwOk?.addEventListener('click', ()=>{
   const v = pwInput.value.trim();
   if (!v){
@@ -596,8 +606,9 @@ document.getElementById('edit-save')?.addEventListener('click', async ()=>{
   }
 });
   document.getElementById('edit-cancel')?.addEventListener('click', ()=>{
-    tempEdited = JSON.parse(JSON.stringify(filteredCharacters[currentIndex]));
-    renderEditableFields(); refreshSaveState();
+    tempEdited = null;           // 変更は破棄
+    exitEditMode();              // 編集モードを抜ける
+    showDetail();                // 表示を通常モードで再描画
   });
 
 // 調査中トグル
