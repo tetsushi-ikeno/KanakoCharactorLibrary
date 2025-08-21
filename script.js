@@ -291,3 +291,220 @@ loadPalettes();
 async function loadPalettes(){ try{ const res = await fetch('data/palettes.json?v=' + Date.now(), { cache:'no-store' }); if (!res.ok) throw new Error(`HTTPエラー: ${res.status}`); const palettes = await res.json(); renderPaletteList(palettes); const savedKey = localStorage.getItem('theme.palette.key'); const initial = palettes.find(p=>p.key===savedKey) || palettes[0]; applyPalette(initial); }catch(e){ console.error('パレット読み込み失敗:', e); } }
 function applyPalette(p){ if (!p) return; const root=document.documentElement; root.style.setProperty('--base-color', p.base); root.style.setProperty('--accent-color', p.accent); root.style.setProperty('--sub-color', p.sub); localStorage.setItem('theme.palette.key', p.key); }
 function renderPaletteList(palettes){ const panel=$id('palette-panel'); panel.innerHTML=''; palettes.forEach(p=>{ const item=document.createElement('div'); item.className='palette-item'; item.innerHTML = `<div class="palette-name">${p.name}</div><div class="palette-bars" style="--base-color:${p.base};--accent-color:${p.accent};--sub-color:${p.sub}"><span></span><span></span><span></span></div>`; item.addEventListener('click', ()=>{ applyPalette(p); panel.hidden = true; }); panel.appendChild(item); }); const btn=$id('palette-btn'); btn.onclick = (e)=>{ e.stopPropagation(); panel.hidden = !panel.hidden; }; document.addEventListener('click', (e)=>{ if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) panel.hidden = true; }); }
+
+/* === Quickfix pack: list/detail & lazy === */
+
+/** カード背景の遅延読込（簡易版） */
+function setupCardLazyLoader(){
+  if (ioCardBg) return; // 1回だけ
+  ioCardBg = new IntersectionObserver((entries)=>{
+    entries.forEach(en=>{
+      if (!en.isIntersecting) return;
+      const el = en.target;
+      const src = el.dataset.bg;
+      if (src){ el.style.backgroundImage = `url("${src}")`; el.removeAttribute('data-bg'); }
+      ioCardBg.unobserve(el);
+    });
+  }, { rootMargin: '200px' });
+}
+
+/** series を配列化 */
+function asSeriesArray(c){
+  if (Array.isArray(c.series)) return c.series;
+  const s = (c.series ?? '').toString();
+  return s ? s.split(/[,\s]+/).filter(Boolean) : [];
+}
+
+/** id昇順で並べ替え */
+function sortCharacters(list){
+  return [...list].sort((a,b)=>{
+    const na = parseInt((a.id||'').replace(/\D/g,'')) || 0;
+    const nb = parseInt((b.id||'').replace(/\D/g,'')) || 0;
+    return na - nb;
+  });
+}
+
+/** 現在の条件で再描画 */
+function applyFilters(){
+  const kw = (keyword||'').trim();
+  const re = kw ? new RegExp(kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'i') : null;
+
+  filteredCharacters = sortCharacters(characters).filter(c=>{
+    // series
+    if (activeSeries && activeSeries !== 'all') {
+      const arr = asSeriesArray(c);
+      if (!arr.includes(activeSeries)) return false;
+    }
+    // 調査中/調査済
+    if (statusFilter === 'wip'  && !isPending(c)) return false;
+    if (statusFilter === 'done' &&  isPending(c)) return false;
+
+    // キーワード（id, name, プロフィール, 見た目, メモのどれかにヒット）
+    if (re){
+      const p = c.profile || {};
+      const hay = [
+        c.id, c.name,
+        p['住んでいるところ']||'',
+        p['好きなもの・こと']||'',
+        p['イメージカラー']||'',
+        c.appearance||'',
+        c.memo||''
+      ].join('\n');
+      if (!re.test(hay)) return false;
+    }
+    return true;
+  });
+
+  renderList(filteredCharacters);
+  renderSummaryBar();
+}
+
+/** 一覧を描画 */
+function renderList(list){
+  const wrap = $id('card-list');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  list.forEach((c, idx)=>{
+    const card = document.createElement('article');
+    card.className = 'char-card';
+
+    // 画像（あれば）
+    const img = document.createElement('img');
+    img.alt = c.name || '';
+    img.src = imgSrcFor(c.id);
+    setFallbackOnError(img);
+
+    // 背景（遅延セット用）
+    const bg = document.createElement('div');
+    bg.className = 'card-bg';
+    // 小さめ背景があれば優先して試す
+    const bgCand = bgCandidates(c.id);
+    bg.dataset.bg = bgCand[2] || bgCand[1] || bgCand[0] || ''; // 400→800→1600
+    if (ioCardBg) ioCardBg.observe(bg);
+
+    const title = document.createElement('h3');
+    title.textContent = `${c.id}. ${c.name}`;
+
+    const meta = document.createElement('div');
+    meta.className = 'card-meta';
+    const series = asSeriesArray(c).join(' / ');
+    meta.innerHTML = `
+      <span class="series">${series || '—'}</span>
+      <span class="status ${isPending(c)?'wip':'done'}">${isPending(c)?'調査中':'調査済'}</span>
+    `;
+
+    card.appendChild(bg);
+    card.appendChild(img);
+    card.appendChild(title);
+    card.appendChild(meta);
+
+    card.addEventListener('click', ()=>{
+      currentIndex = idx;
+      showDetail();
+    });
+
+    wrap.appendChild(card);
+  });
+
+  // 一覧表示に切り替え
+  $id('list-view')?.classList.remove('hidden');
+  $id('detail-view')?.classList.add('hidden');
+}
+
+/** 詳細へ */
+function showDetail(){
+  if (!filteredCharacters.length) return;
+  loadCharacter(currentIndex);
+  $id('list-view')?.classList.add('hidden');
+  $id('detail-view')?.classList.remove('hidden');
+}
+
+/** 一覧へ */
+function showList(){
+  $id('detail-view')?.classList.add('hidden');
+  $id('list-view')?.classList.remove('hidden');
+}
+
+/** 指定indexのキャラを詳細に描画 */
+function loadCharacter(idx){
+  const c = filteredCharacters[idx];
+  if (!c) return;
+
+  // ヒーロー画像
+  const img = $id('detail-img');
+  if (img){
+    img.src = imgSrcFor(c.id);
+    img.alt = c.name || '';
+    setFallbackOnError(img);
+  }
+
+  // 背景（候補を上から順に試す）
+  const bg = $id('detail-bg');
+  if (bg){
+    const cand = bgCandidates(c.id);
+    let tried = 0;
+    const tryNext = ()=>{
+      if (tried >= cand.length){ bg.removeAttribute('src'); return; }
+      const url = cand[tried++]; if (!url){ tryNext(); return; }
+      bg.onerror = tryNext; bg.onload = ()=>{ bg.onerror = null; };
+      bg.src = url;
+    };
+    tryNext();
+  }
+
+  // summary / profile / appearance / memo
+  const p = c.profile || {};
+  $id('character-summary').innerHTML = `
+    <p>No.${c.id}</p>
+    <h2>${c.name}</h2>
+    <div class="tags">${asSeriesArray(c).map(s=>`<span class="tag">${s}</span>`).join('')}</div>
+  `;
+  $id('profile').innerHTML = `
+    <h3>プロフィール</h3>
+    <div>住んでいるところ：${withInvestigating(p['住んでいるところ']||'')}</div>
+    <div>好きなもの・こと：${withInvestigating(p['好きなもの・こと']||'')}</div>
+    <div>イメージカラー：${withInvestigating(p['イメージカラー']||'')}</div>
+  `;
+  $id('appearance').innerHTML = `<h3>見た目</h3><p>${withInvestigating(c.appearance||'')}</p>`;
+  $id('memo').innerHTML       = `<h3>メモ</h3><p>${withInvestigating(c.memo||'')}</p>`;
+}
+
+/** サマリー（件数とバー） */
+function renderSummaryBar(){
+  const total = characters.length;
+  const done  = characters.filter(c=>!isPending(c)).length;
+  const wip   = total - done;
+
+  // pill 数字
+  $id('sum-count-done') && ($id('sum-count-done').textContent = String(done));
+  $id('sum-count-wip')  && ($id('sum-count-wip').textContent  = String(wip));
+  $id('sum-txt-total')  && ($id('sum-txt-total').textContent  = String(total));
+  $id('sum-txt-done')   && ($id('sum-txt-done').textContent   = String(done));
+  $id('sum-txt-wip')    && ($id('sum-txt-wip').textContent    = String(wip));
+  $id('sum-txt-rate')   && ($id('sum-txt-rate').textContent   = total? Math.round(done*100/total)+'%' : '0%');
+
+  // プログレス（幅）
+  const doneW = total? (done*100/total) : 0;
+  const wipW  = total? (wip*100/total)  : 0;
+  $id('sum-bar-done') && ($id('sum-bar-done').style.width = doneW + '%');
+  $id('sum-bar-wip')  && ($id('sum-bar-wip').style.width  = wipW  + '%');
+}
+
+/* クリックで「調査済/調査中」ピルによるフィルタ（任意） */
+$id('sum-pill-done')?.addEventListener('click', ()=>{
+  statusFilter = (statusFilter==='done') ? null : 'done';
+  document.getElementById('sum-pill-done').setAttribute('aria-pressed', String(statusFilter==='done'));
+  document.getElementById('sum-pill-wip')?.setAttribute('aria-pressed','false');
+  applyFilters();
+});
+$id('sum-pill-wip')?.addEventListener('click', ()=>{
+  statusFilter = (statusFilter==='wip') ? null : 'wip';
+  document.getElementById('sum-pill-wip').setAttribute('aria-pressed', String(statusFilter==='wip'));
+  document.getElementById('sum-pill-done')?.setAttribute('aria-pressed','false');
+  applyFilters();
+});
+$id('sum-clear')?.addEventListener('click', ()=>{
+  statusFilter = null; applyFilters();
+});
+/* === /Quickfix pack === */
