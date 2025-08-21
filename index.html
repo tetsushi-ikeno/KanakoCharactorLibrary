@@ -1,121 +1,138 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="app-build" content="2025-08-21-03" />
-<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
-<meta http-equiv="Pragma" content="no-cache" />
-<meta http-equiv="Expires" content="0" />
-<title>キャラ図鑑</title>
-<link rel="stylesheet" href="style.css?v=2025-08-21-03" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="app-build" content="2025-08-21-05" />
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>キャラ図鑑</title>
+  <link rel="stylesheet" href="style.css?v=2025-08-21-05" />
 </head>
 <body>
-<!-- ヘッダー -->
-<header class="header">
-  <div class="header-inner">
-    <div class="header-left">
-      <h1>キャラ図鑑</h1>
-      <!-- チップ型のシリーズフィルタ（横スクロール） -->
-      <div class="series-filter" id="series-filter" role="tablist" aria-label="シリーズで絞り込み">
-        <button class="chip is-active" data-series="all" role="tab" aria-selected="true">全シリーズ</button>
-        <button class="chip" data-series="ねこニャ町" role="tab" aria-selected="false">ねこニャ町</button>
-        <button class="chip" data-series="四角丸町" role="tab" aria-selected="false">四角丸町</button>
-        <button class="chip" data-series="にじいろ学校" role="tab" aria-selected="false">にじいろ学校</button>
-        <button class="chip" data-series="investigating" role="tab" aria-selected="false">調査中</button>
+  <!-- アプリ全体ラッパ -->
+  <div class="app">
+
+    <!-- ヘッダー／ツールバー -->
+    <header class="header" role="banner">
+      <div class="header-inner">
+
+        <div class="branding">
+          <h1 class="app-title">キャラ図鑑</h1>
+        </div>
+
+        <!-- フィルタ群（横スクロール可能） -->
+        <div class="filters" role="navigation" aria-label="シリーズで絞り込み">
+          <div class="series-filter" id="series-filter" role="tablist">
+            <button class="chip is-active" data-series="all" role="tab" aria-selected="true">全シリーズ</button>
+            <button class="chip" data-series="ねこニャ町" role="tab" aria-selected="false">ねこニャ町</button>
+            <button class="chip" data-series="四角丸町" role="tab" aria-selected="false">四角丸町</button>
+            <button class="chip" data-series="にじいろ学校" role="tab" aria-selected="false">にじいろ学校</button>
+            <button class="chip" data-series="investigating" role="tab" aria-selected="false">調査中</button>
+          </div>
+          <button id="pending-toggle" class="pill pill-wip" aria-pressed="false" title="調査中だけ表示">調査中</button>
+        </div>
+
+        <!-- 右側アクション -->
+        <div class="actions">
+          <label class="search" aria-label="キーワード検索">
+            <input id="search-box" class="search-input" type="search" placeholder="キーワード検索…" inputmode="search" />
+          </label>
+
+          <div class="palette">
+            <button class="icon-btn" id="palette-btn" aria-label="テーマカラー">🎨</button>
+            <div class="palette-panel" id="palette-panel" hidden></div>
+          </div>
+
+          <button class="icon-btn" id="edit-btn" aria-label="編集モード">✎</button>
+        </div>
+
       </div>
-      <button id="pending-toggle" class="pending-pill" aria-pressed="false" title="調査中だけ表示">調査中</button>
-    </div>
-    <div class="header-right">
-      <input type="text" id="search-box" class="search-box" placeholder="キーワード検索..." />
-      <button class="palette-btn" id="palette-btn" aria-label="テーマカラー">🎨</button>
-      <div class="palette-panel" id="palette-panel" hidden></div>
-      <button class="edit-btn" id="edit-btn" aria-label="編集モード">✎</button>
-    </div>
-  </div>
-</header>
+    </header>
 
-<!-- ▼▼ 調査状況サマリーバー ▼▼ -->
-<section class="summary-bar" role="region" aria-label="調査状況">
-  <div class="summary-inner">
-    <div class="summary-head">
-      <span class="summary-title">調査状況</span>
-      <div class="summary-pills">
-        <button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
-          <span class="dot dot-done"></span><span class="pill-label">調査済</span>
-          <b id="sum-count-done" class="pill-count">0</b>
-        </button>
-        <button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
-          <span class="dot dot-wip"></span><span class="pill-label">調査中</span>
-          <b id="sum-count-wip" class="pill-count">0</b>
-        </button>
+    <!-- 調査状況サマリーバー -->
+    <section class="summary-bar" role="region" aria-label="調査状況">
+      <div class="summary-inner">
+        <div class="summary-head">
+          <span class="summary-title">調査状況</span>
+          <div class="summary-pills">
+            <button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
+              <span class="dot dot-done" aria-hidden="true"></span><span class="pill-label">調査済</span>
+              <b id="sum-count-done" class="pill-count">0</b>
+            </button>
+            <button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
+              <span class="dot dot-wip" aria-hidden="true"></span><span class="pill-label">調査中</span>
+              <b id="sum-count-wip" class="pill-count">0</b>
+            </button>
+          </div>
+        </div>
+
+        <div class="progressbar" aria-hidden="true">
+          <div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
+          <div id="sum-bar-wip" class="bar-seg bar-wip" style="width:0%"></div>
+        </div>
+
+        <div class="summary-numbers">
+          調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
+          調査中 <b id="sum-txt-wip">0</b>
+          <button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 一覧ビュー -->
+    <main id="list-view" role="main" aria-live="polite">
+      <div id="card-list" class="card-grid"></div>
+    </main>
+
+    <!-- 詳細ビュー -->
+    <section id="detail-view" class="detail hidden" aria-label="キャラ詳細">
+      <div class="detail-header">
+        <button class="back-button" aria-label="一覧に戻る">← 一覧に戻る</button>
+        <div class="nav">
+          <button class="nav-button prev" aria-label="前のキャラ">‹</button>
+          <button class="nav-button next" aria-label="次のキャラ">›</button>
+        </div>
+      </div>
+
+      <div class="detail-hero">
+        <!-- 背景はCSSでオブジェクトフィット。低解像の仮画像→本画像へはJS -->
+        <img id="detail-bg" class="detail-bg" alt="" />
+        <img id="detail-img" class="detail-img" alt="" />
+      </div>
+
+      <div class="detail-content">
+        <section id="character-summary" class="panel summary" aria-label="キャラ概要"></section>
+        <section id="profile" class="panel" aria-label="プロフィール"></section>
+        <section id="appearance" class="panel" aria-label="見た目"></section>
+        <section id="memo" class="panel" aria-label="メモ"></section>
+      </div>
+
+      <!-- 編集アクション（編集時のみ表示） -->
+      <div id="edit-actions" class="edit-actions" hidden>
+        <button id="edit-save" class="btn-primary">保存</button>
+        <button id="edit-cancel" class="btn-ghost">取消</button>
+      </div>
+    </section>
+
+    <!-- パスワード入力モーダル -->
+    <div id="pw-modal" class="modal" hidden>
+      <div class="modal-backdrop"></div>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+        <h3 id="pw-title">編集パスワード</h3>
+        <input id="pw-input" type="password" placeholder="パスワード" inputmode="text" autocomplete="current-password" />
+        <div id="pw-error" class="field-error" hidden>パスワードを入力してください。</div>
+        <div class="modal-actions">
+          <button id="pw-ok" class="btn-primary">OK</button>
+          <button id="pw-cancel" class="btn-ghost">キャンセル</button>
+        </div>
       </div>
     </div>
-    <div class="progressbar" aria-hidden="true">
-      <div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
-      <div id="sum-bar-wip" class="bar-seg bar-wip" style="width:0%"></div>
-    </div>
-    <div class="summary-numbers">
-      調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
-      調査中 <b id="sum-txt-wip">0</b>
-      <button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
-    </div>
-  </div>
-</section>
-<!-- ▲▲ 調査状況サマリーバー ▲▲ -->
 
-<!-- ▼▼ 一覧ビュー ▼▼ -->
-<main id="list-view">
-  <div id="card-list" class="card-grid" aria-live="polite"></div>
-</main>
-<!-- ▲▲ 一覧ビュー ▲▲ -->
+  </div><!-- /.app -->
 
-<!-- ▼▼ 詳細ビュー ▼▼ -->
-<section id="detail-view" class="hidden">
-  <div class="detail-header">
-    <button class="back-button" aria-label="一覧に戻る">← 一覧に戻る</button>
-    <div class="nav">
-      <button class="nav-button prev" aria-label="前へ">‹</button>
-      <button class="nav-button next" aria-label="次へ">›</button>
-    </div>
-  </div>
-
-  <div class="detail-hero">
-    <img id="detail-bg" class="detail-bg" alt="" />
-    <img id="detail-img" class="detail-img" alt="" />
-  </div>
-
-  <div class="detail-content">
-    <div id="character-summary" class="summary"></div>
-    <div id="profile" class="panel"></div>
-    <div id="appearance" class="panel"></div>
-    <div id="memo" class="panel"></div>
-  </div>
-
-  <!-- 編集アクション（編集時のみ表示） -->
-  <div id="edit-actions" class="edit-actions" hidden>
-    <button id="edit-save" class="btn-primary">保存</button>
-    <button id="edit-cancel" class="btn-ghost">取消</button>
-  </div>
-</section>
-<!-- ▲▲ 詳細ビュー ▲▲ -->
-
-<!-- ▼▼ パスワード入力モーダル ▼▼ -->
-<div id="pw-modal" class="modal" hidden>
-  <div class="modal-backdrop"></div>
-  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pw-title">
-    <h3 id="pw-title">編集パスワード</h3>
-    <input id="pw-input" type="password" placeholder="パスワード" />
-    <div id="pw-error" class="field-error" hidden>パスワードを入力してください。</div>
-    <div class="modal-actions">
-      <button id="pw-ok" class="btn-primary">OK</button>
-      <button id="pw-cancel" class="btn-ghost">キャンセル</button>
-    </div>
-  </div>
-</div>
-<!-- ▲▲ パスワード入力モーダル ▲▲ -->
-
-<!-- 末尾で JS を読み込む（ビルド番号でキャッシュ回避） -->
-<script src="script.js?v=2025-08-21-03"></script>
+  <!-- 末尾でJS（キャッシュ回避用のビルド番号付き） -->
+  <script src="script.js?v=2025-08-21-05"></script>
 </body>
 </html>
