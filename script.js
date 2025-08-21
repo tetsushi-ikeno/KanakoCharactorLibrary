@@ -821,3 +821,5 @@ async function onSaveClick(){
   const payload = {
     id: tempEdited.id,
     series: Array.isArray(tempEdited.series) ? tempEdited.series : asSeriesArray(tempEdited),
+  }
+}
