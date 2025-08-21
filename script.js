@@ -39,33 +39,45 @@ return s === '' || s === PLACEHOLDER;
 // ====== data load ======
 // ★ Vercel統合版：APIは同一オリジン
 const API_BASE = location.origin;
-
+// GETを /api/characters → ダメなら /api/characters.js で再試行
+async function fetchCharactersSafe(){
+  const urls = [`${API_BASE}/api/characters`, `${API_BASE}/api/characters.js`];
+  for (const url of urls){
+    try{
+      const r = await fetch(url, { cache:'no-store' });
+      if (r.ok) return await r.json();
+    }catch(e){ /* next */ }
+  }
+  throw new Error('characters API not available');
+}
 async function loadData(){
   try{
-    const res = await fetch(`${API_BASE}/api/characters`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    characters = await res.json();
+    characters = await fetchCharactersSafe();
     filteredCharacters = sortCharacters(characters);
     renderList(filteredCharacters);
     wireHeaderHandlers();
     renderSummaryBar();
   }catch(e){
     console.error('API読み込み失敗:', e);
-    alert('データ読み込みに失敗しました。Vercelの /api/characters を確認してください。');
+    alert('データ読み込みに失敗しました。/api/characters を確認してください。');
   }
 }
 
 async function apiPatchCharacter(payload){
-  const res = await fetch(`${API_BASE}/api/characters`, {
-    method:'PATCH',
-    headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecret },
-    body: JSON.stringify(payload)
-  });
-  if(!res.ok){
-    const t = await res.text().catch(()=> '');
-    throw new Error(`PATCH ${res.status} ${t}`);
+  const urls = [`${API_BASE}/api/characters`, `${API_BASE}/api/characters.js`];
+  let last;
+  for (const url of urls){
+    try{
+      const res = await fetch(url, {
+        method:'PATCH',
+        headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecret },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) return res.json();
+      last = await res.text().catch(()=> '');
+    }catch(e){ last = String(e); }
   }
-  return res.json();
+  throw new Error('PATCH failed: ' + (last||'unknown'));
 }
 async function reloadDataFresh(preserveId){
   try{
