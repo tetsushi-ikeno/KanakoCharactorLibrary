@@ -36,79 +36,154 @@ return s === '' || s === PLACEHOLDER;
 });
 }
 
-// ====== API ORIGIN ======
-const VERCEL_ORIGIN = "https://kanako-charactor-library.vercel.app";
-const API_ORIGIN = location.hostname.endsWith("vercel.app") ? location.origin : VERCEL_ORIGIN;
-
-
 // ====== data load ======
+// ★ Vercel統合版：APIは同一オリジン
+const API_BASE = location.origin;
+
 async function loadData(){
-try{
-const res = await fetch(`${API_ORIGIN}/api/characters`, { cache: 'no-store' });
-if (!res.ok) throw new Error(`HTTP ${res.status}`);
-characters = await res.json();
-filteredCharacters = sortCharacters(characters);
-renderList(filteredCharacters);
-wireHeaderHandlers();
-renderSummaryBar();
-}catch(e){ console.error('API読み込みに失敗:', e); alert('APIからの読み込みに失敗しました。'); }
+  try{
+    const res = await fetch(`${API_BASE}/api/characters`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    characters = await res.json();
+    filteredCharacters = sortCharacters(characters);
+    renderList(filteredCharacters);
+    wireHeaderHandlers();
+    renderSummaryBar();
+  }catch(e){
+    console.error('API読み込み失敗:', e);
+    alert('データ読み込みに失敗しました。Vercelの /api/characters を確認してください。');
+  }
 }
 
+async function apiPatchCharacter(payload){
+  const res = await fetch(`${API_BASE}/api/characters`, {
+    method:'PATCH',
+    headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecret },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok){
+    const t = await res.text().catch(()=> '');
+    throw new Error(`PATCH ${res.status} ${t}`);
+  }
+  return res.json();
+}
 async function reloadDataFresh(preserveId){
-search.addEventListener('input', e => { keyword = (e.target.value||''); applyFilters(); });
-search.dataset.bound = '1';
+  try{
+    const res = await fetch(`${API_BASE}/api/characters`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const list = await res.json();
+    characters = Array.isArray(list) ? list : [];
+    filteredCharacters = sortCharacters(characters);
+
+    if (preserveId){
+      const idx = filteredCharacters.findIndex(c => c.id === preserveId);
+      if (idx >= 0) currentIndex = idx;
+    }
+    applyFilters(); // 再描画・サマリー更新
+  }catch(e){
+    console.error('再取得に失敗:', e);
+    showToast('最新データの取得に失敗しました','err');
+  }
 }
-// シリーズ（チップ）
-const sf = $id('series-filter');
-if (sf && !sf.dataset.bound){
-sf.addEventListener('click', e =>{
-const btn = e.target.closest('.chip'); if(!btn) return;
-// 調査中チップは statusFilter へ
-const v = btn.dataset.series;
-if (v === 'investigating'){ statusFilter = (statusFilter === 'wip') ? null : 'wip'; renderSummaryBar(); }
-else { activeSeries = v; [...sf.children].forEach(b=>b.classList.toggle('is-active', b===btn)); }
-applyFilters();
-});
-sf.dataset.bound = '1';
+function wireHeaderHandlers(){
+  // 検索
+  const search = $id('search-box');
+  if (search && !search.dataset.bound){
+    search.addEventListener('input', e => {
+      keyword = (e.target.value||'');
+      applyFilters();
+    });
+    search.dataset.bound = '1';
+  }
+
+  // シリーズ（チップ）
+  const sf = $id('series-filter');
+  if (sf && !sf.dataset.bound){
+    sf.addEventListener('click', e =>{
+      const btn = e.target.closest('.chip'); if(!btn) return;
+      const v = btn.dataset.series;
+      if (v === 'investigating'){
+        statusFilter = (statusFilter === 'wip') ? null : 'wip';
+        renderSummaryBar();
+      } else {
+        activeSeries = v;
+        [...sf.children].forEach(b=>b.classList.toggle('is-active', b===btn));
+      }
+      applyFilters();
+    });
+    sf.dataset.bound = '1';
+  }
+
+  // 編集モーダル
+  const editBtn    = $id('edit-btn');
+  const modalLayer = $id('pw-modal');
+  const pwInput    = $id('pw-input');
+  const pwOk       = $id('pw-ok');
+  const pwCancel   = $id('pw-cancel');
+  const pwError    = $id('pw-error');
+  const backdrop   = modalLayer?.querySelector('.modal-backdrop');
+  const panel      = modalLayer?.querySelector('.modal-panel');
+
+  function openPwModal(){
+    if (!modalLayer) return;
+    pwError.hidden = true; pwInput.value = '';
+    modalLayer.hidden = false; modalLayer.classList.add('show');
+    setTimeout(()=>pwInput.focus(),0);
+  }
+  function closePwModal(){
+    if (!modalLayer) return;
+    modalLayer.classList.remove('show'); modalLayer.hidden = true;
+  }
+
+  editBtn?.addEventListener('click', ()=>{
+    if (isEditing){ exitEditMode(); return; }
+    openPwModal();
+  });
+  backdrop?.addEventListener('click',      closePwModal);
+  backdrop?.addEventListener('touchstart', closePwModal, {passive:true});
+  panel?.addEventListener('click',      e=>e.stopPropagation());
+  panel?.addEventListener('touchstart', e=>e.stopPropagation(), {passive:true});
+  pwCancel?.addEventListener('click', closePwModal);
+  pwOk?.addEventListener('click', ()=>{
+    const v = pwInput.value.trim();
+    if (!v){ pwError.hidden = false; pwError.textContent = 'パスワードを入力してください。'; return; }
+    adminSecret = v; closePwModal(); enterEditMode();
+  });
+  pwInput?.addEventListener('keydown', e=>{
+    if (e.key === 'Enter') $id('pw-ok').click();
+    if (e.key === 'Escape') closePwModal();
+  });
+
+  // 編集保存/取消
+  $id('edit-save')?.addEventListener('click', onSaveClick);
+  $id('edit-cancel')?.addEventListener('click', ()=>{
+    tempEdited=null; exitEditMode(); showDetail();
+  });
+
+  // 調査中トグル
+  const pendingBtn = $id('pending-toggle');
+  if (pendingBtn && !pendingBtn.dataset.bound){
+    pendingBtn.addEventListener('click', ()=>{
+      const pressed = pendingBtn.getAttribute('aria-pressed') === 'true';
+      const next = !pressed;
+      pendingBtn.setAttribute('aria-pressed', String(next));
+      statusFilter = next ? 'wip' : null;
+      applyFilters();
+    });
+    pendingBtn.dataset.bound = '1';
+  }
+
+  // ナビ/戻る
+  document.querySelector('.back-button')?.addEventListener('click', showList);
+  document.querySelector('.nav-button.next')?.addEventListener('click', ()=>{
+    currentIndex = (currentIndex+1) % filteredCharacters.length; loadCharacter(currentIndex);
+  });
+  document.querySelector('.nav-button.prev')?.addEventListener('click', ()=>{
+    currentIndex = (currentIndex-1+filteredCharacters.length) % filteredCharacters.length; loadCharacter(currentIndex);
+  });
 }
-// 編集モーダル（既存ロジック）
-const editBtn = $id('edit-btn');
-const modalLayer = $id('pw-modal');
-const pwInput = $id('pw-input');
-const pwOk = $id('pw-ok');
-const pwCancel = $id('pw-cancel');
-const pwError = $id('pw-error');
-const backdrop = modalLayer?.querySelector('.modal-backdrop');
-const panel = modalLayer?.querySelector('.modal-panel');
-function openPwModal(){ if (!modalLayer) return; pwError.hidden = true; pwInput.value = ''; modalLayer.hidden = false; modalLayer.classList.add('show'); setTimeout(()=>pwInput.focus(),0); }
-function closePwModal(){ if (!modalLayer) return; modalLayer.classList.remove('show'); modalLayer.hidden = true; }
-editBtn?.addEventListener('click', ()=>{ if (isEditing){ exitEditMode(); return; } openPwModal(); });
-backdrop?.addEventListener('click', closePwModal);
-backdrop?.addEventListener('touchstart', closePwModal, {passive:true});
-panel?.addEventListener('click', e=>e.stopPropagation());
-panel?.addEventListener('touchstart', e=>e.stopPropagation(), {passive:true});
-pwCancel?.addEventListener('click', closePwModal);
-pwOk?.addEventListener('click', ()=>{ const v = pwInput.value.trim(); if (!v){ pwError.hidden = false; pwError.textContent = 'パスワードを入力してください。'; return; } adminSecret = v; closePwModal(); enterEditMode(); });
-pwInput?.addEventListener('keydown', e=>{ if (e.key === 'Enter') $id('pw-ok').click(); if (e.key === 'Escape') closePwModal(); });
 
 
-// 編集保存/取消（既存）
-$id('edit-save')?.addEventListener('click', onSaveClick);
-$id('edit-cancel')?.addEventListener('click', ()=>{ tempEdited=null; exitEditMode(); showDetail(); });
-
-
-// 調査中トグル（従来ボタン）
-const pendingBtn = $id('pending-toggle');
-if (pendingBtn && !pendingBtn.dataset.bound){
-pendingBtn.addEventListener('click', ()=>{ const pressed = pendingBtn.getAttribute('aria-pressed') === 'true'; const next = !pressed; pendingBtn.setAttribute('aria-pressed', String(next)); statusFilter = next ? 'wip' : null; applyFilters(); });
-pendingBtn.dataset.bound = '1';
-}
-
-
-// ナビ/戻る
-document.querySelector('.back-button')?.addEventListener('click', showList);
-document.querySelector('.nav-button.next')?.addEventListener('click', ()=>{ currentIndex = (currentIndex+1) % filteredCharacters.length; loadCharacter(currentIndex); });
-document.querySelector('.nav-button.prev')?.addEventListener('click', ()=>{ currentIndex = (currentIndex-1+filteredCharacters.length) % filteredCharacters.length; loadCharacter(currentIndex); });
 
 // ====== edit mode (一部既存) ======
 let isEditing = false;
@@ -172,15 +247,6 @@ function colorLabel(hex){ if(!hex) return ''; const hit = COLOR_24.find(([h]) =>
 function toHexColor(v){ const s = (v||'').toString().trim(); if(!s) return ''; const d = document.createElement('div'); d.style.color = s; document.body.appendChild(d); const m = getComputedStyle(d).color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); document.body.removeChild(d); if(!m) return ''; return '#'+[m[1],m[2],m[3]].map(n=>(+n).toString(16).padStart(2,'0')).join('').toUpperCase(); }
 function withInvestigating(v){ const s = (v ?? '').toString().trim(); return s === '' ? '--調査中--' : s; }
 function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
-
-
-async function apiPatchCharacter(payload){
-const url = `${API_ORIGIN}/api/characters`;
-const res = await fetch(url, { method:'PATCH', headers:{ 'Content-Type':'application/json', 'X-Admin-Secret': adminSecret }, body: JSON.stringify(payload) });
-if(!res.ok){ const text = await res.text().catch(()=> ''); throw new Error(`PATCH ${res.status} ${text}`); }
-return res.json();
-}
-
 
 function validateEdited(data){
 const errors={};
