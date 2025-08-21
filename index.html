@@ -34,36 +34,60 @@
 </div>
 </div>
 </header>
+<!-- ▼▼ 一覧ビュー ▼▼ -->
+<main id="list-view">
+  <div id="card-list" class="card-grid" aria-live="polite"></div>
+</main>
+<!-- ▲▲ 一覧ビュー ▲▲ -->
 
+<!-- ▼▼ 詳細ビュー ▼▼ -->
+<section id="detail-view" class="hidden">
+  <div class="detail-header">
+    <button class="back-button" aria-label="一覧に戻る">← 一覧に戻る</button>
+    <div class="nav">
+      <button class="nav-button prev" aria-label="前へ">‹</button>
+      <button class="nav-button next" aria-label="次へ">›</button>
+    </div>
+  </div>
 
-<!-- ▼▼ 調査状況サマリーバー ▼▼ -->
-<section class="summary-bar" role="region" aria-label="調査状況">
-<div class="summary-inner">
-<div class="summary-head">
-<span class="summary-title">調査状況</span>
-<div class="summary-pills">
-<button id="sum-pill-done" class="sum-pill" data-filter="done" aria-pressed="false" aria-label="調査済だけ表示">
-<span class="dot dot-done"></span><span class="pill-label">調査済</span>
-<b id="sum-count-done" class="pill-count">0</b>
-</button>
-<button id="sum-pill-wip" class="sum-pill" data-filter="wip" aria-pressed="false" aria-label="調査中だけ表示">
-<span class="dot dot-wip"></span><span class="pill-label">調査中</span>
-<b id="sum-count-wip" class="pill-count">0</b>
-</button>
-</div>
-</div>
-<div class="progressbar" aria-hidden="true">
-<div id="sum-bar-done" class="bar-seg bar-done" style="width:0%"></div>
-<div id="sum-bar-wip" class="bar-seg bar-wip" style="width:0%"></div>
-</div>
-<div class="summary-numbers">
-調査済 <b id="sum-txt-done">0</b> / <b id="sum-txt-total">0</b>（<b id="sum-txt-rate">0%</b>）｜
-調査中 <b id="sum-txt-wip">0</b>
-<button id="sum-clear" class="sum-clear" hidden>✕ すべて表示</button>
-</div>
-</div>
+  <div class="detail-hero">
+    <img id="detail-bg" class="detail-bg" alt="" />
+    <img id="detail-img" class="detail-img" alt="" />
+  </div>
+
+  <div class="detail-content">
+    <div id="character-summary" class="summary"></div>
+    <div id="profile" class="panel"></div>
+    <div id="appearance" class="panel"></div>
+    <div id="memo" class="panel"></div>
+  </div>
+
+  <!-- 編集アクション（編集時のみ表示） -->
+  <div id="edit-actions" class="edit-actions" hidden>
+    <button id="edit-save" class="btn-primary">保存</button>
+    <button id="edit-cancel" class="btn-ghost">取消</button>
+  </div>
 </section>
-<!-- ▲▲ 調査状況サマリーバー ▲▲ -->
+<!-- ▲▲ 詳細ビュー ▲▲ -->
 
+<!-- 編集モード切替ボタンはヘッダー右上の ✎ を使用 -->
 
+<!-- ▼▼ パスワード入力モーダル ▼▼ -->
+<div id="pw-modal" class="modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+    <h3 id="pw-title">編集パスワード</h3>
+    <input id="pw-input" type="password" placeholder="パスワード" />
+    <div id="pw-error" class="field-error" hidden>パスワードを入力してください。</div>
+    <div class="modal-actions">
+      <button id="pw-ok" class="btn-primary">OK</button>
+      <button id="pw-cancel" class="btn-ghost">キャンセル</button>
+    </div>
+  </div>
+</div>
+<!-- ▲▲ パスワード入力モーダル ▲▲ -->
+
+<!-- 末尾で JS を読み込む（ビルド番号でキャッシュ回避） -->
+<script src="script.js?v=2025-08-21-01"></script>
+</body>
 </html>
