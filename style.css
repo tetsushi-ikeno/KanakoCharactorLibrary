@@ -334,7 +334,22 @@ img{ max-width:100%; display:block; }
   object-fit: contain;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
 }
-
+/* サマリーをヒーロー上に重ねるための内枠（横幅をコンテンツに合わせる） */
+.hero-inner{
+  position:absolute; inset:0 0 auto 0;      /* ヒーローの上側に載せる */
+  height:var(--hero-h);
+  display:flex; align-items:flex-end;       /* 下寄せ */
+  justify-content:center;                   /* 中央基準 */
+  pointer-events:none;                      /* 背景のクリックを邪魔しない */
+}
+.hero-inner .summary{
+  pointer-events:auto;                      /* サマリー自体は操作可 */
+  width:min(560px, calc(100% - 24px));
+  margin:0 auto 12px auto;                  /* 下にちょい余白 */
+  box-shadow:var(--shadow);
+  /* 右寄せしたい場合は次の1行を追加 */
+  margin-left:auto;
+}
 /* 本文パネル */
 .detail-content{
   max-width:1200px; margin:12px auto 24px; padding:0 12px;
@@ -357,6 +372,10 @@ img{ max-width:100%; display:block; }
   margin: -120px auto 12px;  /* 負のマージンでヒーローにのせる */
   margin-left: auto;         /* 右寄せ */
   box-shadow: var(--shadow);
+}
+.detail-footer{
+  max-width:1200px; margin: 6px auto 24px; padding:0 12px;
+  display:flex; justify-content:center;
 }
 /* =========================
    Edit mode
@@ -394,7 +413,6 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
 #profile .rows{ display:grid; grid-template-columns: 9em 1fr; row-gap:8px; }
 #profile .rows .key{ color:#666; font-size:.9rem; }
 #profile .rows .val{ color:#222; }
-body:not(.is-editing) .edit-actions{ display:none; }
 
 /* =========================
    Responsive
@@ -511,6 +529,7 @@ body.mode-detail #edit-btn { display: inline-flex; }   /* 詳細: 編集表示 *
   position: fixed; left: 16px; bottom: 16px; z-index: 60;
   display: flex; gap: 8px;
 }
+body:not(.is-editing) .edit-actions{ display:none; }
 
 /* バージョンピルは右下のまま */
 .version-pill { position: fixed; right: 16px; bottom: 16px; background: rgba(0,0,0,.55); color:#fff; padding: 6px 8px; border-radius: 10px; font-size: 12px; }

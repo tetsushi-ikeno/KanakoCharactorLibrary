@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-build" content="2025-08-23-07" />
+  <meta name="app-build" content="2025-08-23-08" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>キャラ図鑑</title>
-  <link rel="stylesheet" href="style.css?v=2025-08-23-07" />
+  <link rel="stylesheet" href="style.css?v=2025-08-23-08" />
 </head>
 <body>
   <!-- アプリ全体ラッパ -->
@@ -87,10 +87,6 @@
 
     <!-- 詳細ビュー -->
     <section id="detail-view" class="detail hidden" aria-label="キャラ詳細">
-      <div class="detail-header">
-        <button class="back-button" aria-label="一覧に戻る">← 一覧に戻る</button>
-      </div>
-
       <div class="detail-hero">
         <!-- 背景はCSSでオブジェクトフィット。低解像の仮画像→本画像へはJS -->
         <img id="detail-bg" class="detail-bg" alt="" />
@@ -99,13 +95,20 @@
           <button class="nav-button prev" aria-label="前のキャラ">‹</button>
           <button class="nav-button next" aria-label="次のキャラ">›</button>
         </div>
+        <div class="hero-inner">
+          <section class="panel summary" >
+            <div id="character-summary" aria-label="キャラ概要">
+          </section>
+        </div>
       </div>
 
       <div class="detail-content">
-        <section id="character-summary" class="panel summary" aria-label="キャラ概要"></section>
         <section id="profile" class="panel" aria-label="プロフィール"></section>
         <section id="appearance" class="panel" aria-label="見た目"></section>
         <section id="memo" class="panel" aria-label="メモ"></section>
+        <div class="detail-footer">
+          <button class="back-button" aria-label="一覧に戻る">← 一覧に戻る</button>
+        </div>
       </div>
 
       <!-- 編集アクション（編集時のみ表示） -->
@@ -132,6 +135,6 @@
   </div><!-- /.app -->
 
   <!-- 末尾でJS（キャッシュ回避用のビルド番号付き） -->
-  <script src="script.js?v=2025-08-23-07"></script>
+  <script src="script.js?v=2025-08-23-08"></script>
 </body>
 </html>
