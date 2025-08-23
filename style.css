@@ -295,35 +295,21 @@ img{ max-width:100%; display:block; }
 
 /* 戻る＆ナビ */
 .back-button, .nav-button{
-  border: 1px solid var(--accent-color) !important;;
-  color: var(--accent-color) !important;;
-  background: #fff !important;;
+  background: var(--accent-color) !important;
+  color: var(--base-color) !important;  /* ご要望通り“ベースカラー文字” */
+  border: 1px solid var(--accent-color) !important;
 }
 .back-button:hover, .nav-button:hover{
-  background: color-mix(in srgb, var(--accent-color) 12%, #fff) !important;;
-}
+  filter: brightness(1.05);}
 
 /* もし丸ボタンにしたいなら */
 .nav-button{ border-radius: var(--radius-pill); width: var(--tap-min); height: var(--tap-min); }
 
 /* ヒーロー（背景＋キャラ画像） */
-.detail-hero{
-  position:relative; 
-  margin-left:  calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
-  width: 100vw;
-  padding: 0;                      /* 内側余白は不要 */
-  --hero-h: clamp(260px, 28vw, 420px);
-}
-.detail-bg{
-  height: var(--hero-h);  
-  width:100%; 
-  object-fit: cover;                         /* はみ出し切り取り */
-  border-radius: 0;                 /* 端まで伸ばすので角丸は外す */
-  background:#5d5d5f;                       /* 読み込み中の色(例) */
-  filter: none; transform: none;    /* ぼかしや拡大が残っていれば外す */
+.detail-hero{ position:relative; --hero-h: clamp(260px, 28vw, 420px); }
 
-}
+.detail-bg{ width:100%; height:var(--hero-h); object-fit:cover; border-radius:0; }
+
 .detail-img{
   position:absolute;
   left: 50%; bottom: 8%;
@@ -335,20 +321,17 @@ img{ max-width:100%; display:block; }
 }
 /* サマリーをヒーロー上に重ねるための内枠（横幅をコンテンツに合わせる） */
 .hero-inner{
-  position:absolute; inset:0 0 auto 0;      /* ヒーローの上側に載せる */
-  height:var(--hero-h);
-  grid-template-columns: 1fr;             /* モバイルは1カラム */
-  display:grid;
-  align-items:center;       /* 縦：中央 */
-  max-width:1200px; padding:0 12px;       /* detail-content と同じ器幅/余白 */
-  margin:0 auto;                           /* 画面中央に揃える */
-  pointer-events:none;                     /* 背景クリックを邪魔しない */
-  pointer-events:none;                      /* 背景のクリックを邪魔しない */
+  position:absolute; inset:0; height:var(--hero-h);
+  display:grid; grid-template-columns: 1fr;       /* モバイルは1カラム */
+  align-items:center;                              /* 縦センター */
+  max-width:1200px; width:100%; padding:0 12px;   /* 下のカードと同じ器 */
+  margin:0 auto; gap:12px;
+  pointer-events:none;
 }
 .hero-inner .summary{
   grid-column: 1;                          /* モバイル時：1カラム目 */
   pointer-events:auto;
-  width: min(560px, 100%);                 /* カラム内で自然サイズ */
+  width: 100%;                 
   box-shadow: var(--shadow);
   border-radius: var(--radius);
   display:flex; align-items:center;        /* 中身を縦センター */
@@ -433,7 +416,7 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
    Responsive
    ========================= */
 @media (min-width: 720px){
-  .hero-inner{ grid-template-columns: 1fr 1fr; gap:12px; }
+  .hero-inner{ grid-template-columns: 1fr 1fr; }
   .detail-content{ grid-template-columns: 1fr 1fr; 
     #profile   { grid-column: 1; }
     #appearance{ grid-column: 2; }
