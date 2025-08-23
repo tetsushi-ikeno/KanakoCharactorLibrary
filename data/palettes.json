@@ -33,5 +33,26 @@
     "base": "#8f7d6c",   
     "accent": "#5a4c3f", 
     "sub": "#b2a99d"     
+  },
+  {
+    "key": "chic-gray-craft",
+    "name": "シックグレイクラフト",
+    "base": "#dcd5c8",   
+    "accent": "#a2a2ad", 
+    "sub": "#1f1e63"     
+  },
+  {
+    "key": "ceramic-warmth",
+    "name": "陶磁器の深みと温もり",
+    "base": "#eae4d1",   
+    "accent": "#6c8650", 
+    "sub": "#a87570"     
+  },
+  {
+    "key": "spring-blossom",
+    "name": "春爛漫",
+    "base": "#f3a7ac",   
+    "accent": "#dde67b", 
+    "sub": "#fce9ed"     
   }
 ]
