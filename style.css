@@ -292,14 +292,15 @@ img{ max-width:100%; display:block; }
   padding: 0 8px; pointer-events: none;   /* 親はクリック抜け、子で受ける */
 }
 .detail-hero .nav-button{ pointer-events: auto; }
+
 /* 戻る＆ナビ */
 .back-button, .nav-button{
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
-  background: #fff;
+  border: 1px solid var(--accent-color) !important;;
+  color: var(--accent-color) !important;;
+  background: #fff !important;;
 }
 .back-button:hover, .nav-button:hover{
-  background: color-mix(in srgb, var(--accent-color) 12%, #fff);
+  background: color-mix(in srgb, var(--accent-color) 12%, #fff) !important;;
 }
 
 /* もし丸ボタンにしたいなら */
@@ -312,8 +313,10 @@ img{ max-width:100%; display:block; }
   margin-right: calc(50% - 50vw);
   width: 100vw;
   padding: 0;                      /* 内側余白は不要 */
+  --hero-h: clamp(260px, 28vw, 420px);
 }
 .detail-bg{
+  height: var(--hero-h);  
   width:100%; 
   aspect-ratio: 16 / 6; /* width : height（横長・ヘッダーっぽく）*/
   object-fit: cover;                         /* はみ出し切り取り */
@@ -324,7 +327,7 @@ img{ max-width:100%; display:block; }
 }
 .detail-img{
   position:absolute;
-  left: 50%; bottom: 6%;
+  left: 50%; bottom: 8%;
   transform: translateX(-50%);
   width:min(38%, 520px);                     /* 画面に合わせて縮小 */
   max-width:45vw;
@@ -391,6 +394,8 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
 #profile .rows{ display:grid; grid-template-columns: 9em 1fr; row-gap:8px; }
 #profile .rows .key{ color:#666; font-size:.9rem; }
 #profile .rows .val{ color:#222; }
+body:not(.is-editing) .edit-actions{ display:none; }
+
 /* =========================
    Responsive
    ========================= */
@@ -400,11 +405,28 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
     #appearance{ grid-column: 2; }
     #memo      { grid-column: 1 / -1; }  /* 最下段で全幅 */
   }
+    .detail-content .summary{
+    grid-column: 2;         /* ← 右カラムに固定 */
+    position: relative;
+    z-index: 2;
+    width: min(560px, calc(100% - 24px));
+    margin: calc(var(--hero-h) * -0.35) 0 12px auto; /* ← 上へせり上げ */
+    box-shadow: var(--shadow);
+  }
+  /* 1行目：左プロフィール / 右見た目、最下段：メモ全幅 */
+  #profile   { grid-column: 1; }
+  #appearance{ grid-column: 2; }
+  #memo      { grid-column: 1 / -1; }
 }
 
 @media (min-width: 960px){
   .header-inner{ padding:12px 16px; }
-  .detail-img{ width:min(36%, 520px); }
+  .detail-img{ 
+    width:min(36%, 520px);
+    left: 30%;                /* 目安：25〜32%で微調整 */
+    transform: translateX(-50%);
+    bottom: 10%;
+  }
 }
 /* 狭幅: ヘッダーを 3 段（タイトル／フィルタ／検索＆パレット） */
 @media (max-width: 640px){
