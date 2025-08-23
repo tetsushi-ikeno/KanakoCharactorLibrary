@@ -243,10 +243,12 @@ img{ max-width:100%; display:block; }
   position:relative; max-width:1200px; margin:0 auto; padding:0 12px 12px;
 }
 .detail-bg{
-  width:100%; aspect-ratio: 16 / 6;         /* 横長背景の想定 */
+  width:100%; 
+  aspect-ratio: 3 / 4; /* width : height（縦長）*/
   object-fit: cover;                         /* はみ出し切り取り */
   border-radius: var(--radius);
-  background:#221726;                       /* 読み込み中の色(例) */
+  background:#5d5d5f;                       /* 読み込み中の色(例) */
+  max-height: 75vh; 
 }
 .detail-img{
   position:absolute; inset:auto auto 6% 6%;
@@ -307,7 +309,6 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
    ========================= */
 @media (min-width: 720px){
   .detail-content{ grid-template-columns: 1fr 1fr; }
-  .summary{ grid-column: 1 / -1; }
 }
 
 @media (min-width: 960px){
@@ -387,11 +388,6 @@ body.mode-detail #edit-btn { display: inline-flex; }   /* 詳細: 編集表示 *
 }
 .card-img { position: relative; display: block; margin: 6px auto 8px; height: 120px; object-fit: contain; }
 .card-caption { font-size: 13px; color: #333; }
-
-/* ---- detail hero ---- */
-.detail-hero { position: relative; border-radius: 16px; overflow: hidden; margin: 12px 0 10px; }
-.detail-bg  { position: absolute; inset: 0; width:100%; height:100%; object-fit: cover; filter: blur(8px); transform: scale(1.02); }
-.detail-img { position: relative; display:block; margin: 0 auto; max-width: min(70%, 580px); height: auto; }
 
 /* ---- modal tweaks ---- */
 .modal-panel { width: min(560px, 92vw); }
