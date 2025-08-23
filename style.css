@@ -244,7 +244,7 @@ img{ max-width:100%; display:block; }
 }
 .detail-bg{
   width:100%; 
-  aspect-ratio: 3 / 4; /* width : height（縦長）*/
+  aspect-ratio: 4 / 3; /* width : height（縦長）*/
   object-fit: cover;                         /* はみ出し切り取り */
   border-radius: var(--radius);
   background:#5d5d5f;                       /* 読み込み中の色(例) */
