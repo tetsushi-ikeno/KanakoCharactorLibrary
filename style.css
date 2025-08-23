@@ -285,30 +285,48 @@ img{ max-width:100%; display:block; }
   border:1px solid var(--border); background:#fff; cursor:pointer;
 }
 
-.nav{ display:flex; gap:8px; }
-.nav-button{
-  min-width: var(--tap-min); min-height: var(--tap-min);
-  display:inline-grid; place-items:center;
-  border-radius: var(--radius-pill);
-  border:1px solid var(--border); background:#fff; cursor:pointer;
-  font-size:18px;
+/* ヒーロー内ナビを左右中央に */
+.detail-hero .nav{
+  position: absolute; inset: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 8px; pointer-events: none;   /* 親はクリック抜け、子で受ける */
 }
+.detail-hero .nav-button{ pointer-events: auto; }
+/* 戻る＆ナビ */
+.back-button, .nav-button{
+  border: 1px solid var(--accent-color);
+  color: var(--accent-color);
+  background: #fff;
+}
+.back-button:hover, .nav-button:hover{
+  background: color-mix(in srgb, var(--accent-color) 12%, #fff);
+}
+
+/* もし丸ボタンにしたいなら */
+.nav-button{ border-radius: var(--radius-pill); width: var(--tap-min); height: var(--tap-min); }
 
 /* ヒーロー（背景＋キャラ画像） */
 .detail-hero{
-  position:relative; max-width:1200px; margin:0 auto; padding:0 12px 12px;
+  position:relative; 
+  margin-left:  calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  padding: 0;                      /* 内側余白は不要 */
 }
 .detail-bg{
   width:100%; 
-  aspect-ratio: 4 / 3; /* width : height（縦長）*/
+  aspect-ratio: 16 / 6; /* width : height（横長・ヘッダーっぽく）*/
   object-fit: cover;                         /* はみ出し切り取り */
-  border-radius: var(--radius);
+  border-radius: 0;                 /* 端まで伸ばすので角丸は外す */
   background:#5d5d5f;                       /* 読み込み中の色(例) */
-  max-height: 75vh; 
+  filter: none; transform: none;    /* ぼかしや拡大が残っていれば外す */
+
 }
 .detail-img{
-  position:absolute; inset:auto auto 6% 6%;
-  width:min(38%, 480px);                     /* 画面に合わせて縮小 */
+  position:absolute;
+  left: 50%; bottom: 6%;
+  transform: translateX(-50%);
+  width:min(38%, 520px);                     /* 画面に合わせて縮小 */
   max-width:45vw;
   object-fit: contain;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
@@ -324,9 +342,19 @@ img{ max-width:100%; display:block; }
   background:#fff; border:1px solid var(--border);
   border-radius: var(--radius); padding:14px;
 }
+.panel .row + .row{ border-top:1px solid #eee; padding-top:8px; margin-top:8px; }
+
 .summary h2{ margin:.2em 0 .4em; }
 .summary p{ margin:.2em 0; color:var(--muted); }
-
+/* サマリーカードをヒーロー上に重ねる */
+.detail-content .summary{
+  position: relative;
+  z-index: 2;
+  width: min(560px, calc(100% - 24px));
+  margin: -120px auto 12px;  /* 負のマージンでヒーローにのせる */
+  margin-left: auto;         /* 右寄せ */
+  box-shadow: var(--shadow);
+}
 /* =========================
    Edit mode
    ========================= */
@@ -360,11 +388,18 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
 .tag .remove{ margin-left:2px; cursor:pointer; opacity:.6; }
 .tag-input{ margin-top:8px; }
 
+#profile .rows{ display:grid; grid-template-columns: 9em 1fr; row-gap:8px; }
+#profile .rows .key{ color:#666; font-size:.9rem; }
+#profile .rows .val{ color:#222; }
 /* =========================
    Responsive
    ========================= */
 @media (min-width: 720px){
-  .detail-content{ grid-template-columns: 1fr 1fr; }
+  .detail-content{ grid-template-columns: 1fr 1fr; 
+    #profile   { grid-column: 1; }
+    #appearance{ grid-column: 2; }
+    #memo      { grid-column: 1 / -1; }  /* 最下段で全幅 */
+  }
 }
 
 @media (min-width: 960px){
