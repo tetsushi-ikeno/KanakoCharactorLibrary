@@ -318,7 +318,6 @@ img{ max-width:100%; display:block; }
 .detail-bg{
   height: var(--hero-h);  
   width:100%; 
-  aspect-ratio: 16 / 6; /* width : height（横長・ヘッダーっぽく）*/
   object-fit: cover;                         /* はみ出し切り取り */
   border-radius: 0;                 /* 端まで伸ばすので角丸は外す */
   background:#5d5d5f;                       /* 読み込み中の色(例) */
@@ -338,18 +337,34 @@ img{ max-width:100%; display:block; }
 .hero-inner{
   position:absolute; inset:0 0 auto 0;      /* ヒーローの上側に載せる */
   height:var(--hero-h);
-  display:flex; align-items:flex-end;       /* 下寄せ */
-  justify-content:center;                   /* 中央基準 */
+  grid-template-columns: 1fr;             /* モバイルは1カラム */
+  display:grid;
+  align-items:center;       /* 縦：中央 */
+  max-width:1200px; padding:0 12px;       /* detail-content と同じ器幅/余白 */
+  margin:0 auto;                           /* 画面中央に揃える */
+  pointer-events:none;                     /* 背景クリックを邪魔しない */
   pointer-events:none;                      /* 背景のクリックを邪魔しない */
 }
 .hero-inner .summary{
-  pointer-events:auto;                      /* サマリー自体は操作可 */
-  width:min(560px, calc(100% - 24px));
-  margin:0 auto 12px auto;                  /* 下にちょい余白 */
-  box-shadow:var(--shadow);
-  /* 右寄せしたい場合は次の1行を追加 */
-  margin-left:auto;
+  grid-column: 1;                          /* モバイル時：1カラム目 */
+  pointer-events:auto;
+  width: min(560px, 100%);                 /* カラム内で自然サイズ */
+  box-shadow: var(--shadow);
+  border-radius: var(--radius);
+  display:flex; align-items:center;        /* 中身を縦センター */
+  height: calc(var(--hero-h) * .80);       /* ← ここが “80% 高さ” */
 }
+/* 以前の .detail-img の absolute 指定は無効化/削除 */
+.hero-inner .detail-img{
+  position: static;                        /* ← グリッドのアイテムに */
+  justify-self: center;                    /* 左カラム内で中央寄せ */
+  align-self: center;
+  width: clamp(220px, 32vw, 520px);
+  max-width: 45vw;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
+}
+
 /* 本文パネル */
 .detail-content{
   max-width:1200px; margin:12px auto 24px; padding:0 12px;
@@ -418,19 +433,18 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
    Responsive
    ========================= */
 @media (min-width: 720px){
+  .hero-inner{ grid-template-columns: 1fr 1fr; gap:12px; }
   .detail-content{ grid-template-columns: 1fr 1fr; 
     #profile   { grid-column: 1; }
     #appearance{ grid-column: 2; }
     #memo      { grid-column: 1 / -1; }  /* 最下段で全幅 */
+    .hero-inner .summary{
+      grid-column: 2;                        /* PC時：右カラムへ */
+      justify-self: start;                   /* ← 左端を“カラムの開始位置”に揃える */
+    }
   }
-    .detail-content .summary{
-    grid-column: 2;         /* ← 右カラムに固定 */
-    position: relative;
-    z-index: 2;
-    width: min(560px, calc(100% - 24px));
-    margin: calc(var(--hero-h) * -0.35) 0 12px auto; /* ← 上へせり上げ */
-    box-shadow: var(--shadow);
-  }
+  
+ 
   /* 1行目：左プロフィール / 右見た目、最下段：メモ全幅 */
   #profile   { grid-column: 1; }
   #appearance{ grid-column: 2; }
