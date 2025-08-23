@@ -139,32 +139,48 @@ img{ max-width:100%; display:block; }
   background:#fff; border:1px solid var(--border);
   border-radius:12px; padding:8px; box-shadow:var(--shadow);
   display:grid; gap:6px;
-  width: min(320px, 86vw);
+  width: min(420px, 92vw);
   max-height: 60vh; overflow:auto;
+}
+/* hidden 属性が付いたら必ず非表示にする（UAスタイルを上書き） */
+.palette .palette-panel[hidden]{
+  display: none !important;
 }
 /* 各候補（ボタン） */
 .palette-option{
-  display:flex; align-items:center; gap:10px;
+  display:flex; align-items:center; gap:12px;
   width:100%;
   background:#fff; border:1px solid var(--border);
   border-radius:10px; padding:8px 10px; cursor:pointer;
   text-align:left;
+  min-height: 44px;                /* 高さを揃える */
+  padding:8px 12px;
+
 }
 .palette-option:hover{ border-color:#bbb; background:#fafafa; }
 
 /* 色バー（Base/Sub/Accent） */
 .palette-option .bars{
-  --w-base: 8; --w-sub: 4; --w-accent: 1.2;   /* 幅の比率 */
-  display:flex; width:140px; height:18px; overflow:hidden; border-radius:6px;
+  --w-base: 8; --w-accent: 1.2; --w-sub: 4;    /* 幅の比率 */
+  flex: 0 0 200px;                 /* ← 幅を固定（例：200px） */
+  display:flex; width:200px; height:18px; overflow:hidden; border-radius:6px;
   border:1px solid #e2e2e2;
 }
+
 .palette-option .bars span{ display:block; height:100%; }
 .palette-option .bars .base   { flex: var(--w-base);   background: var(--base-color); }
 .palette-option .bars .sub    { flex: var(--w-sub);    background: var(--sub-color); }
 .palette-option .bars .accent { flex: var(--w-accent); background: var(--accent-color); }
 
 /* テキスト */
-.palette-option .label{ font-size:14px; color:#222; }
+.palette-option .label{
+    font-size:14px;
+    color:#222;
+    flex: 1 1 auto;                  /* 余白をここに割り当てる */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 /* 選択中の見た目（チェック+強調） */
 .palette-option.is-active{
