@@ -608,10 +608,12 @@ async function loadPalettes(){
   const res = await fetch('data/palettes.json?v=' + Date.now(), { cache:'no-store' });
   if (!res.ok) return;
   const palettes = await res.json();
-  renderPaletteList(palettes);
+
   const savedKey = localStorage.getItem('theme.palette.key');
-  const initial = palettes.find(p=>p.key===savedKey) || palettes[0];
+  const initial  = palettes.find(p => p.key === savedKey) || palettes[0];
   applyPalette(initial);
+
+  renderPaletteList(palettes, initial.key); // ← activeKey を渡す
 }
 function applyPalette(p){
   if (!p) return;
@@ -621,23 +623,46 @@ function applyPalette(p){
   root.style.setProperty('--sub-color',    p.sub);
   localStorage.setItem('theme.palette.key', p.key);
 }
-function renderPaletteList(palettes){
-  const panel=$id('palette-panel'); if (!panel) return;
-  panel.innerHTML='';
+function renderPaletteList(palettes, activeKey){
+  const panel = $id('palette-panel'); if (!panel) return;
+  panel.innerHTML = '';
+  panel.setAttribute('role','listbox');
+
   palettes.forEach(p=>{
-    const item=document.createElement('div');
-    item.className='palette-item';
-    item.innerHTML = `
-      <div class="palette-name">${p.name}</div>
-      <div class="palette-bars" style="--base-color:${p.base};--accent-color:${p.accent};--sub-color:${p.sub}">
-        <span></span><span></span><span></span>
-      </div>`;
-    item.addEventListener('click', ()=>{ applyPalette(p); panel.hidden = true; });
-    panel.appendChild(item);
+    const btn = document.createElement('button');
+    btn.className = 'palette-option' + (p.key===activeKey ? ' is-active' : '');
+    btn.setAttribute('role','option');
+    btn.setAttribute('aria-pressed', String(p.key===activeKey));
+    btn.dataset.key = p.key;
+
+    // 色バーとラベル
+    btn.innerHTML = `
+      <div class="bars" style="--base-color:${p.base};--accent-color:${p.accent};--sub-color:${p.sub}">
+        <span class="base"></span><span class="accent"></span><span class="sub"></span>
+      </div>
+      <div class="label">${p.name}</div>
+    `;
+
+    btn.addEventListener('click', ()=>{
+      applyPalette(p);
+      // 見た目の選択状態を更新
+      panel.querySelectorAll('.palette-option').forEach(el=>{
+        const on = el.dataset.key === p.key;
+        el.classList.toggle('is-active', on);
+        el.setAttribute('aria-pressed', String(on));
+      });
+      panel.hidden = true; // 選択後は閉じる
+    });
+
+    panel.appendChild(btn);
   });
-  const btn=$id('palette-btn');
-  btn.onclick = (e)=>{ e.stopPropagation(); panel.hidden = !panel.hidden; };
-  document.addEventListener('click', (e)=>{ if(!panel.hidden && !panel.contains(e.target) && e.target!==btn) panel.hidden = true; });
+
+  // トグル動作（既存を活かしつつ）
+  const btnToggle = $id('palette-btn');
+  btnToggle.onclick = (e)=>{ e.stopPropagation(); panel.hidden = !panel.hidden; };
+  document.addEventListener('click', (e)=>{
+    if (!panel.hidden && !panel.contains(e.target) && e.target!==btnToggle) panel.hidden = true;
+  });
 }
 
 /* ===============================
