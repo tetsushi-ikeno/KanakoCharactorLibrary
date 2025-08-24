@@ -114,7 +114,7 @@ img{ max-width:100%; display:block; }
 }
 .search{ display:inline-flex; align-items:center; }
 .search-input{
-  swidth: clamp(180px, 40vw, 320px);
+  width: clamp(180px, 40vw, 320px);
   min-height: var(--tap-min);
   padding: 0 12px;
   border-radius: var(--radius-pill);
@@ -322,28 +322,31 @@ img{ max-width:100%; display:block; }
 /* サマリーをヒーロー上に重ねるための内枠（横幅をコンテンツに合わせる） */
 .hero-inner{
   position:absolute; inset:0; height:var(--hero-h);
-  display:grid; grid-template-columns: 1fr;       /* モバイルは1カラム */
-  align-items:center;                              /* 縦センター */
-  max-width:1200px; width:100%; padding:0 12px;   /* 下のカードと同じ器 */
-  margin:0 auto; gap:12px;
+  max-width:1200px; width:100%; padding:0 12px; margin:0 auto;
+  display:grid; gap:12px;
+  /* モバイルは1カラム（縦積み） */
+  grid-template-areas:
+    "art"
+    "info";
+  align-items:center;  /* 縦センター */
   pointer-events:none;
 }
 .hero-inner .summary{
-  grid-column: 1;                          /* モバイル時：1カラム目 */
-  pointer-events:auto;
-  width: 100%;                 
+  grid-area: info;
+  pointer-events: auto;
+  width: 100%;
+  height: calc(var(--hero-h) * .80);      /* ヒーローの80%の高さ */
+  display: flex; align-items: center;     /* 中身を縦中央 */
+  margin: 0;                              /* はみ出し防止：余計な余白なし */
   box-shadow: var(--shadow);
-  border-radius: var(--radius);
-  display:flex; align-items:center;        /* 中身を縦センター */
-  height: calc(var(--hero-h) * .80);       /* ← ここが “80% 高さ” */
+  justify-self: start;                    /* 右カラムの左端にぴったり */
 }
 /* 以前の .detail-img の absolute 指定は無効化/削除 */
 .hero-inner .detail-img{
-  position: static;                        /* ← グリッドのアイテムに */
-  justify-self: center;                    /* 左カラム内で中央寄せ */
-  align-self: center;
-  width: clamp(220px, 32vw, 520px);
-  max-width: 45vw;
+  grid-area: art;
+  position: static;                       /* 以前の absolute は無効化 */
+  justify-self: center;                   /* 左カラム内で中央寄せ */
+  width: clamp(220px, 32vw, 520px); max-width:45vw;
   object-fit: contain;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
 }
@@ -435,8 +438,11 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
 }
 
 @media (min-width: 960px){
-  .header-inner{ padding:12px 16px; }
-  .detail-img{ 
+  .hero-inner{
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    grid-template-areas: "art info";      /* PCは横並び */
+  }
+    .detail-img{ 
     width:min(36%, 520px);
     left: 30%;                /* 目安：25〜32%で微調整 */
     transform: translateX(-50%);
