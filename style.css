@@ -665,3 +665,65 @@ body:not(.is-editing) .edit-actions{ display:none; }
 /* 画面の地（ヘッダー以外）をベース色に */
 #list-view,
 #detail-view { background: var(--base-color); }
+
+/* === Palette apply: cards & panels === */
+
+/* 一覧の地はすでにベース指定済み。カードはサブに上書き */
+#list-view { background: var(--base-color); }
+.card{
+  background: var(--sub-color) !important;     /* ← ここが肝 */
+  border-color: color-mix(in srgb, var(--sub-color) 85%, #000);
+}
+
+/* カード内の文字はアクセント色で視認性UP */
+.card .card-caption,
+.card .card-id,
+.card .card-name,
+.card .meta,
+.card .name,
+.card .series{
+  color: var(--accent-color) !important;
+}
+
+/* 詳細の地＝ベース、各パネル＝サブ、文字＝アクセント */
+#detail-view .detail-content { background: var(--base-color); }
+#detail-view .panel{
+  background: var(--sub-color) !important;
+  color: var(--accent-color);
+}
+/* ===== wiggle effect ===== */
+@keyframes wiggle {
+  0%   { transform: translateX(-50%) rotate(0deg); }
+  20%  { transform: translateX(-50%) rotate(-4deg); }
+  40%  { transform: translateX(-50%) rotate(4deg); }
+  60%  { transform: translateX(-50%) rotate(-3deg); }
+  80%  { transform: translateX(-50%) rotate(3deg); }
+  100% { transform: translateX(-50%) rotate(0deg); }
+}
+/* 一覧のキャラ画像 & 詳細のキャラ画像に適用できるクラス */
+.card-media .card-img.wiggle,
+#detail-img.wiggle { animation: wiggle 600ms ease-in-out; }
+
+/* 動きに弱いユーザー配慮 */
+@media (prefers-reduced-motion: reduce) {
+  .card-media .card-img.wiggle,
+  #detail-img.wiggle { animation: none; }
+}
+// ------- wiggle helpers -------
+function attachWiggle(el){
+  if(!el) return;
+  const trigger = ()=>{
+    el.classList.add('wiggle');
+    setTimeout(()=> el.classList.remove('wiggle'), 650);
+  };
+  // マウス（ポインタが細かい環境のみ）
+  el.addEventListener('pointerenter', ()=>{
+    if (window.matchMedia('(pointer: fine)').matches) trigger();
+  }, {passive:true});
+  // タップ（iPad/iPhone含む）
+  el.addEventListener('touchstart', trigger, {passive:true});
+  // キーボード（アクセシビリティ）
+  el.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' || e.key === ' ') trigger();
+  });
+}

@@ -775,3 +775,22 @@ $id('detail-img')?.addEventListener('click', ()=> openFullScreenByIndex(currentI
 // FSナビ
 $id('fs-prev')?.addEventListener('click', (e)=>{ e.stopPropagation(); openFullScreenByIndex(currentIndex-1); });
 $id('fs-next')?.addEventListener('click', (e)=>{ e.stopPropagation(); openFullScreenByIndex(currentIndex+1); });
+
+// ------- wiggle helpers -------
+function attachWiggle(el){
+  if(!el) return;
+  const trigger = ()=>{
+    el.classList.add('wiggle');
+    setTimeout(()=> el.classList.remove('wiggle'), 650);
+  };
+  // マウス（ポインタが細かい環境のみ）
+  el.addEventListener('pointerenter', ()=>{
+    if (window.matchMedia('(pointer: fine)').matches) trigger();
+  }, {passive:true});
+  // タップ（iPad/iPhone含む）
+  el.addEventListener('touchstart', trigger, {passive:true});
+  // キーボード（アクセシビリティ）
+  el.addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter' || e.key === ' ') trigger();
+  });
+}
