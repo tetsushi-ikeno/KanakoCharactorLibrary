@@ -127,6 +127,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setupCardLazyLoader();
   wireHeaderHandlers();
+    // 詳細ヒーローでキャラクリック→フルスクリーン
+  $id('detail-img')?.addEventListener('click', ()=>{
+    const c = filteredCharacters[currentIndex];
+    if (c) openFullScreen(c.id, c.name);
+  });
+  // モーダルの閉じる操作
+  $id('fs-close')?.addEventListener('click', closeFullScreen);
+  $id('fs-modal')?.addEventListener('click', (e)=>{
+    if (e.target.classList.contains('fs-backdrop')) closeFullScreen();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && !$id('fs-modal').hidden) closeFullScreen();
+  });
 
   try{
     characters = await fetchCharacters();
@@ -260,6 +273,10 @@ function renderList(list){
       showDetail();
     });
 
+    // 4:3のメディア枠に画像をまとめる
+    const media = document.createElement('div');
+    media.className = 'card-media';
+
     // 背景サムネ（遅延）
     const bg = document.createElement('img');
     bg.className = 'card-bg';
@@ -277,12 +294,14 @@ function renderList(list){
     setFallbackOnError(img);
     if (ioCardBg) ioCardBg.observe(img);
 
+    media.appendChild(bg);
+    media.appendChild(img);
+
     const cap = document.createElement('div');
     cap.className = 'card-caption';
     cap.innerHTML = `<span class="card-id">${c.id}</span> <span class="card-name">${escapeHtml(c.name||'')}</span>`;
 
-    card.appendChild(bg);
-    card.appendChild(img);
+    card.appendChild(media);
     card.appendChild(cap);
     frag.appendChild(card);
   });
@@ -686,3 +705,33 @@ function showToast(msg, type='ok'){
   setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-6px)'; }, 1600);
   setTimeout(()=>{ el.remove(); }, 2100);
 }
+function openFullScreen(id, name){
+  const modal = $id('fs-modal');
+  const bgEl  = $id('fs-bg');
+  const chEl  = $id('fs-char');
+
+  // 低解像から順に読み替える（既存の bgCandidates を活用）
+  bgEl.src = lqipSrc(id);
+  (async () => {
+    for (const url of bgCandidates(id)){
+      const ok = await new Promise(res=>{
+        const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=url;
+      });
+      if (ok){ bgEl.src = url; break; }
+    }
+  })();
+
+  chEl.src = imgSrcFor(id);
+  chEl.alt = name || '';
+
+  setFallbackOnError(chEl);
+
+  modal.hidden = false;
+  modal.classList.add('show');
+}
+function closeFullScreen(){
+  const modal = $id('fs-modal');
+  modal.classList.remove('show');
+  modal.hidden = true;
+}
+
