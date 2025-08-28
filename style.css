@@ -250,7 +250,7 @@ img{ max-width:100%; display:block; }
 .card{
   border:1px solid var(--border);
   border-radius: var(--radius);
-  background:#fff;
+  background:var(--sub-color);
   box-shadow: var(--shadow);
   overflow:hidden;
   display:flex; flex-direction:column;
@@ -266,6 +266,8 @@ img{ max-width:100%; display:block; }
   padding:10px 12px;
   display:flex; flex-direction:column; gap:4px;
   font-size:14px;
+  color:#111; 
+
 }
 .card .name{ font-weight:700; }
 .card .series{ color:var(--muted); font-size:12px; }
@@ -303,7 +305,12 @@ img{ max-width:100%; display:block; }
   filter: brightness(1.05);}
 
 /* もし丸ボタンにしたいなら */
-.nav-button{ border-radius: var(--radius-pill); width: var(--tap-min); height: var(--tap-min); }
+.nav-button{ 
+   position:relative;
+  border-radius: var(--radius-pill); width: var(--tap-min); 
+  height: var(--tap-min); 
+  z-index: 7;
+}
 
 /* ヒーロー（背景＋キャラ画像） */
 .detail-hero{ position:relative; --hero-h: clamp(260px, 28vw, 420px); }
@@ -318,6 +325,8 @@ img{ max-width:100%; display:block; }
   max-width:45vw;
   object-fit: contain;
   filter: drop-shadow(0 10px 24px rgba(0,0,0,.35));
+  z-index: 6;
+
 }
 /* サマリーをヒーロー上に重ねるための内枠（横幅をコンテンツに合わせる） */
 .hero-inner{
@@ -356,10 +365,13 @@ img{ max-width:100%; display:block; }
   max-width:1200px; margin:12px auto 24px; padding:0 12px;
   display:grid; gap:12px;
   grid-template-columns: 1fr;
+  background: var(--base-color);
 }
 .panel{
-  background:#fff; border:1px solid var(--border);
-  border-radius: var(--radius); padding:14px;
+  background: var(--sub-color);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding:14px;
 }
 .panel .row + .row{ border-top:1px solid #eee; padding-top:8px; margin-top:8px; }
 
@@ -378,6 +390,8 @@ img{ max-width:100%; display:block; }
   max-width:1200px; margin: 6px auto 24px; padding:0 12px;
   display:flex; justify-content:center;
 }
+.search-input, .palette .palette-panel { background:#fff; }
+
 /* =========================
    Edit mode
    ========================= */
@@ -633,3 +647,21 @@ body:not(.is-editing) .edit-actions{ display:none; }
   object-fit: contain;
   filter: drop-shadow(0 14px 28px rgba(0,0,0,.35));
 }
+
+#fs-modal .fs-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:48px; height:48px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.6);
+  background: rgba(0,0,0,.35);
+  color:#fff; font-size:26px; line-height:1; cursor:pointer;
+  display:grid; place-items:center;
+  user-select:none;
+}
+#fs-modal .fs-prev{ left:12px; }
+#fs-modal .fs-next{ right:12px; }
+#fs-modal .fs-nav:hover{ background: rgba(0,0,0,.5); }
+#fs-modal .fs-close{ background:#fff; color:#111; } /* ×だけ白 */
+
+/* 画面の地（ヘッダー以外）をベース色に */
+#list-view,
+#detail-view { background: var(--base-color); }

@@ -735,3 +735,43 @@ function closeFullScreen(){
   modal.hidden = true;
 }
 
+function setFsForIndex(idx){
+  const c = filteredCharacters[idx]; if(!c) return;
+  const bgEl=$id('fs-bg'), chEl=$id('fs-char');
+
+  // 低解像→高解像へ順次（既存ユーティリティを再利用）
+  bgEl.src = lqipSrc(c.id);
+  (async () => {
+    for (const url of bgCandidates(c.id)){
+      const ok = await new Promise(res=>{
+        const im=new Image(); im.onload=()=>res(true); im.onerror=()=>res(false); im.src=url;
+      });
+      if (ok){ bgEl.src = url; break; }
+    }
+  })();
+  chEl.src = imgSrcFor(c.id);
+  chEl.alt = c.name || '';
+}
+
+function openFullScreenByIndex(idx){
+  currentIndex = (idx + filteredCharacters.length) % filteredCharacters.length;
+  $id('fs-modal').hidden = false;
+  setFsForIndex(currentIndex);
+}
+function openFullScreen(idOrIndex){
+  // 旧API互換：id（"001"等）が来たらindexへ解決
+  if (typeof idOrIndex === 'string'){
+    const i = filteredCharacters.findIndex(x=>x.id===idOrIndex);
+    if (i>=0) openFullScreenByIndex(i);
+  } else {
+    openFullScreenByIndex(idOrIndex|0);
+  }
+}
+function closeFullScreen(){ $id('fs-modal').hidden = true; }
+
+// 詳細のキャラをクリック→現在indexで開く（既存を置換）
+$id('detail-img')?.addEventListener('click', ()=> openFullScreenByIndex(currentIndex));
+
+// FSナビ
+$id('fs-prev')?.addEventListener('click', (e)=>{ e.stopPropagation(); openFullScreenByIndex(currentIndex-1); });
+$id('fs-next')?.addEventListener('click', (e)=>{ e.stopPropagation(); openFullScreenByIndex(currentIndex+1); });
