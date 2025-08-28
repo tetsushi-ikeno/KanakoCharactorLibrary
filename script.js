@@ -294,6 +294,9 @@ function renderList(list){
     setFallbackOnError(img);
     if (ioCardBg) ioCardBg.observe(img);
 
+    // ここでwiggleをバインド！
+    attachWiggle(img);
+
     media.appendChild(bg);
     media.appendChild(img);
 
@@ -399,6 +402,9 @@ function loadCharacter(index){
   hero.src = imgSrcFor(c.id);
   hero.alt = c.name || '';
   setFallbackOnError(hero);
+
+  // wiggle適用
+  attachWiggle(hero);
 
   // 概要（シリーズ）
   const series = asSeriesArray(c).map(s=>`<span class="tag">${escapeHtml(s)}</span>`).join(' ');

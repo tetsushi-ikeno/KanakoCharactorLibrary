@@ -675,21 +675,20 @@ body:not(.is-editing) .edit-actions{ display:none; }
   border-color: color-mix(in srgb, var(--sub-color) 85%, #000);
 }
 
-/* カード内の文字はアクセント色で視認性UP */
 .card .card-caption,
 .card .card-id,
 .card .card-name,
 .card .meta,
 .card .name,
 .card .series{
-  color: var(--accent-color) !important;
+  color: var(--base-color) !important;
 }
 
-/* 詳細の地＝ベース、各パネル＝サブ、文字＝アクセント */
+/* 詳細の地＝ベース、各パネル＝サブ、文字＝ベース */
 #detail-view .detail-content { background: var(--base-color); }
 #detail-view .panel{
   background: var(--sub-color) !important;
-  color: var(--accent-color);
+  color: var(--base-color) !important;
 }
 /* ===== wiggle effect ===== */
 @keyframes wiggle {
@@ -708,22 +707,4 @@ body:not(.is-editing) .edit-actions{ display:none; }
 @media (prefers-reduced-motion: reduce) {
   .card-media .card-img.wiggle,
   #detail-img.wiggle { animation: none; }
-}
-// ------- wiggle helpers -------
-function attachWiggle(el){
-  if(!el) return;
-  const trigger = ()=>{
-    el.classList.add('wiggle');
-    setTimeout(()=> el.classList.remove('wiggle'), 650);
-  };
-  // マウス（ポインタが細かい環境のみ）
-  el.addEventListener('pointerenter', ()=>{
-    if (window.matchMedia('(pointer: fine)').matches) trigger();
-  }, {passive:true});
-  // タップ（iPad/iPhone含む）
-  el.addEventListener('touchstart', trigger, {passive:true});
-  // キーボード（アクセシビリティ）
-  el.addEventListener('keydown', (e)=>{
-    if (e.key === 'Enter' || e.key === ' ') trigger();
-  });
 }
