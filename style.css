@@ -559,31 +559,39 @@ body:not(.is-editing) .edit-actions{ display:none; }
 
 /* バージョンピルは右下のまま */
 .version-pill { position: fixed; right: 16px; bottom: 16px; background: rgba(0,0,0,.55); color:#fff; padding: 6px 8px; border-radius: 10px; font-size: 12px; }
-/* Fullscreen modal */
-.fs-modal[hidden]{ display:none !important; }
-.fs-modal{ position:fixed; inset:0; z-index:2000; }
-.fs-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); }
-.fs-canvas{
-  position:absolute; inset:0;
-  display:grid; place-items:center;
-  padding: 4vmin;
+/* ---- detail hero: 画像もクリック可能に ---- */
+.hero-inner .detail-img{
+  pointer-events: auto;         /* ← これでクリック可能になる */
+  cursor: zoom-in;
 }
-.fs-bg{
-  width: 100%;
-  height: 100%;
-  object-fit: contain;      /* ← 背景は切らない */
-  filter: drop-shadow(0 12px 30px rgba(0,0,0,.3));
+
+/* ---- fullscreen modal (背景はトリミング無し) ---- */
+#fs-modal[hidden]{ display:none !important; }
+#fs-modal{
+  position: fixed; inset: 0; z-index: 2000;
 }
-.fs-char{
-  position:absolute;
-  max-width: min(60vw, 60vh);
-  max-height: 70vh;
+#fs-modal .fs-backdrop{
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.65);
+}
+#fs-modal .fs-stage{
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+}
+#fs-modal .fs-bg{
+  max-width: 100vw; max-height: 100vh;
+  object-fit: contain;          /* ← 背景は切り取りなしで全体表示 */
+}
+#fs-modal .fs-char{
+  position: absolute; left: 50%; bottom: 6vh;
+  transform: translateX(-50%);
+  max-height: 70vh; max-width: 70vw;
   object-fit: contain;
-  left:50%; top:50%; transform:translate(-50%,-50%);
-  filter: drop-shadow(0 12px 30px rgba(0,0,0,.35));
+  filter: drop-shadow(0 14px 28px rgba(0,0,0,.35));
 }
-.fs-close{
-  position:absolute; right:16px; top:16px;
-  width:44px; height:44px; border-radius:999px;
-  border:1px solid #ddd; background:#fff; cursor:pointer; font-size:22px;
+#fs-modal .fs-close{
+  position: absolute; top: 12px; right: 12px;
+  width: 40px; height: 40px; border-radius: 999px;
+  border: none; background: rgba(255,255,255,.9);
+  font-size: 22px; cursor: pointer;
 }
