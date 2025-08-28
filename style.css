@@ -376,7 +376,7 @@ img{ max-width:100%; display:block; }
 .panel .row + .row{ border-top:1px solid #eee; padding-top:8px; margin-top:8px; }
 
 .summary h2{ margin:.2em 0 .4em; }
-.summary p{ margin:.2em 0; color:var(--muted); }
+.summary p{ margin:.2em 0; }
 /* サマリーカードをヒーロー上に重ねる */
 .detail-content .summary{
   position: relative;
@@ -420,7 +420,7 @@ body.is-editing .panel{ outline:2px dashed #c7c7c7; }
 .tag{
   display:inline-flex; align-items:center; gap:6px;
   padding:6px 10px; border-radius: var(--radius-pill);
-  background:#f4f4f4; border:1px solid var(--border); font-size:13px;
+  border:1px solid var(--border); font-size:13px;
 }
 .tag .remove{ margin-left:2px; cursor:pointer; opacity:.6; }
 .tag-input{ margin-top:8px; }
@@ -691,17 +691,18 @@ body:not(.is-editing) .edit-actions{ display:none; }
   color: var(--base-color) !important;
 }
 /* ===== wiggle effect ===== */
+/* wiggleは回転だけに限定する */
 @keyframes wiggle {
-  0%   { transform: translateX(-50%) rotate(0deg); }
-  20%  { transform: translateX(-50%) rotate(-4deg); }
-  40%  { transform: translateX(-50%) rotate(4deg); }
-  60%  { transform: translateX(-50%) rotate(-3deg); }
-  80%  { transform: translateX(-50%) rotate(3deg); }
-  100% { transform: translateX(-50%) rotate(0deg); }
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(-4deg); }
+  40%  { transform: rotate(4deg); }
+  60%  { transform: rotate(-3deg); }
+  80%  { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
 }
-/* 一覧のキャラ画像 & 詳細のキャラ画像に適用できるクラス */
 .card-media .card-img.wiggle,
 #detail-img.wiggle { animation: wiggle 600ms ease-in-out; }
+
 
 /* 動きに弱いユーザー配慮 */
 @media (prefers-reduced-motion: reduce) {
