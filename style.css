@@ -746,3 +746,83 @@ body:not(.is-editing) .edit-actions{ display:none; }
   content: "+"; position:absolute; inset:0; display:grid; place-items:center; font-weight:700; color:#666;
   background: repeating-linear-gradient(90deg, #eee, #eee 10px, #f7f7f7 10px, #f7f7f7 20px);
 }
+/* ===== Palette New (functional) ===== */
+.modal.palette-new .modal-panel{
+  /* モーダルの“地”をベース色でプレビュー */
+  --m-base:   var(--base-color);
+  --m-accent: var(--accent-color);
+  --m-sub:    var(--sub-color);
+  background: var(--m-base);
+  color: #222; /* 内側カードで可読性を確保するので地の文字色は固定でOK */
+}
+
+.modal.palette-new .pnm-inner{
+  background: #fff;               /* 読みやすい内側カード */
+  border-radius: 14px;
+  padding: 16px;
+}
+
+/* リストのバー（一覧と同じ見え方を再現） */
+.pnm-listbar{
+  display:flex; align-items:center; gap:10px;
+  border:1px solid var(--border); border-radius: 12px; padding:8px 10px; margin: 8px 0 12px;
+  background:#fff;
+}
+.pnm-listbar .bars{
+  display:flex; width: 220px; height: 16px; border-radius: 8px; overflow: hidden; border:1px solid #e2e2e2;
+}
+.pnm-listbar .bars .base   { flex: 8;   background: var(--m-base); }
+.pnm-listbar .bars .accent { flex: 1.2; background: var(--m-accent); }
+.pnm-listbar .bars .sub    { flex: 4;   background: var(--m-sub); }
+.pnm-listbar .name{ color:#333; font-size:14px; }
+
+/* 入力行 */
+.palette-new .pnm-inputs{ display: grid; gap: 10px; margin: 10px 0 14px; }
+.palette-new .pnm-row{ display: grid; grid-template-columns: 10em 1fr; gap: 10px; align-items: center; }
+.palette-new .pnm-slot{ display: grid; grid-template-columns: 80px auto 1fr; gap: 10px; align-items: center; }
+.palette-new .pnm-swatch{ height: 36px; border-radius: 8px; border:1px dashed #ccc; background: #f7f7f7; }
+
+/* タブ（=入力方法）。“選択中”はアクセント色で強調 */
+.palette-new .pnm-tabs{ display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.palette-new .pnm-tabs > button{
+  min-height: 32px; padding: 4px 10px; border-radius: 999px;
+  border: 1px solid var(--border); background: #fff; cursor: pointer;
+}
+.palette-new .pnm-tabs > button.is-active{
+  background: var(--m-accent); border-color: var(--m-accent); color: var(--m-base);
+}
+
+/* コントロール */
+.palette-new .pnm-ctrls .ctrl{ min-height: 36px; }
+.palette-new .pnm-ctrls .ctrl[hidden]{ display:none; }
+.palette-new input.ctrl-code{
+  padding: 0 10px; border-radius: 8px; border:1px solid var(--border); width: 140px;
+}
+.palette-new select.ctrl-preset{
+  min-height: 36px; border:1px solid var(--border); border-radius: 8px; padding: 0 8px;
+}
+
+/* プレビュー。右側“ボタン”はアクセント色 × ベース文字に */
+.palette-new .pnm-preview{ display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.palette-new .pnm-card-preview,
+.palette-new .pnm-layout-preview{ background:#fff; border:1px solid var(--border); border-radius:12px; padding: 12px; }
+
+.palette-new .mock-card{ background: var(--m-sub); border:1px solid color-mix(in srgb, var(--m-sub) 85%, #000); border-radius: 10px; padding: 12px; }
+.palette-new .mock-thumb{ height: 96px; border-radius: 8px; background: color-mix(in srgb, var(--m-sub) 80%, #fff); margin-bottom: 10px; }
+.palette-new .mock-title{ color: var(--m-base); font-weight: 700; margin-bottom: 6px; }
+.palette-new .mock-sub{ color: var(--m-base); opacity: .85; font-size: 13px; }
+
+.palette-new .mock-header{ background: var(--m-sub); color: var(--m-base); border:1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; text-align:center; }
+.palette-new .mock-list{ display: grid; gap: 8px; }
+.palette-new .mock-item{ height: 44px; border-radius: 8px; background: #fff; border:1px solid var(--border); }
+.palette-new .mock-cta{ margin-top: 10px; text-align:center; padding: 10px 12px; border-radius: 8px;
+  background: var(--m-accent); color: var(--m-base); border:1px solid var(--m-accent);
+}
+
+/* フッターのボタンもアクセント反映 */
+.palette-new .btn-primary{
+  background: var(--m-accent); border-color: var(--m-accent); color: var(--m-base);
+}
+.palette-new .btn-ghost{ background:#fff; }
+.palette-new .modal-actions{ display:flex; align-items:center; gap: 8px; margin-top: 10px; }
+.palette-new .modal-actions .spacer{ flex:1; }

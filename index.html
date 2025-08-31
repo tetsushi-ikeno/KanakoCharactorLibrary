@@ -131,79 +131,114 @@
         </div>
       </div>
     </div>
-<!-- 新規パレット（モック）モーダル -->
-<div id="palette-new-modal" class="modal" hidden>
-  <div class="modal-backdrop"></div>
-  <div class="modal-panel palette-new" role="dialog" aria-modal="true" aria-labelledby="pnm-title">
-    <h3 id="pnm-title">新しいパレット（モック）</h3>
-    <p class="muted">ベース／アクセント／サブの3色を指定します。下でレイアウトの見え方を確認できます。</p>
+<!-- 新規パレット（機能付き） -->
+    <div id="palette-new-modal" class="modal palette-new" hidden>
+      <div class="modal-backdrop"></div>
 
-    <!-- 上段：3色の入力行（タブはダミー。配置イメージ用） -->
-    <section class="pnm-inputs">
-      <div class="pnm-row">
-        <label class="pnm-key">ベース<br><small>（文字色に使用）</small></label>
-        <div class="pnm-slot">
-          <div class="pnm-swatch" aria-hidden="true"></div>
-          <div class="pnm-tabs">
-            <button class="is-active" type="button">ピッカー</button>
-            <button type="button">既定色</button>
-            <button type="button">コード</button>
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="pnm-title">
+        <!-- 内側を読みやすいカードにして、外側はベース色でプレビュー -->
+        <div class="pnm-inner">
+          <h3 id="pnm-title">新しいパレット</h3>
+          <p class="muted">ベース／アクセント／サブの3色を指定します。下でレイアウトの見え方を確認できます。</p>
+
+          <!-- クリック一度目で出る“リストのバー”イメージ -->
+          <div class="pnm-listbar" aria-label="リストのバーのイメージ">
+            <div class="bars">
+              <span class="base"></span>
+              <span class="accent"></span>
+              <span class="sub"></span>
+            </div>
+            <div class="name">（新規パレット）</div>
+          </div>
+
+          <!-- 上段：色入力（各行でピッカー/既定色/コードを切替） -->
+          <section class="pnm-inputs" id="pnm-inputs">
+            <!-- ベース -->
+            <div class="pnm-row" data-key="base">
+              <label class="pnm-key">ベース<br><small>画面の背景・テキスト</small></label>
+              <div class="pnm-slot">
+                <div class="pnm-swatch"></div>
+                <div class="pnm-tabs" role="tablist" aria-label="ベースの入力方法">
+                  <button class="is-active" data-mode="picker" role="tab" aria-selected="true">ピッカー</button>
+                  <button data-mode="preset" role="tab" aria-selected="false">既定色</button>
+                  <button data-mode="code"   role="tab" aria-selected="false">コード</button>
+                </div>
+                <div class="pnm-ctrls">
+                  <input class="ctrl ctrl-picker" type="color" value="#888888">
+                  <select class="ctrl ctrl-preset" hidden></select>
+                  <input class="ctrl ctrl-code"   hidden placeholder="#RRGGBB">
+                </div>
+              </div>
+            </div>
+
+            <!-- アクセント -->
+            <div class="pnm-row" data-key="accent">
+              <label class="pnm-key">アクセント<br><small>ボタン・強調</small></label>
+              <div class="pnm-slot">
+                <div class="pnm-swatch"></div>
+                <div class="pnm-tabs" role="tablist" aria-label="アクセントの入力方法">
+                  <button class="is-active" data-mode="picker" role="tab" aria-selected="true">ピッカー</button>
+                  <button data-mode="preset" role="tab" aria-selected="false">既定色</button>
+                  <button data-mode="code"   role="tab" aria-selected="false">コード</button>
+                </div>
+                <div class="pnm-ctrls">
+                  <input class="ctrl ctrl-picker" type="color" value="#7A6B58">
+                  <select class="ctrl ctrl-preset" hidden></select>
+                  <input class="ctrl ctrl-code"   hidden placeholder="#RRGGBB">
+                </div>
+              </div>
+            </div>
+
+            <!-- サブ -->
+            <div class="pnm-row" data-key="sub">
+              <label class="pnm-key">サブ<br><small>カード背景など</small></label>
+              <div class="pnm-slot">
+                <div class="pnm-swatch"></div>
+                <div class="pnm-tabs" role="tablist" aria-label="サブの入力方法">
+                  <button class="is-active" data-mode="picker" role="tab" aria-selected="true">ピッカー</button>
+                  <button data-mode="preset" role="tab" aria-selected="false">既定色</button>
+                  <button data-mode="code"   role="tab" aria-selected="false">コード</button>
+                </div>
+                <div class="pnm-ctrls">
+                  <input class="ctrl ctrl-picker" type="color" value="#D7E3E6">
+                  <select class="ctrl ctrl-preset" hidden></select>
+                  <input class="ctrl ctrl-code"   hidden placeholder="#RRGGBB">
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- 下段：プレビュー（左＝カード視認性、右＝画面ミニレイアウト） -->
+          <section class="pnm-preview">
+            <div class="pnm-card-preview" aria-label="カード視認性プレビュー">
+              <div class="mock-card">
+                <div class="mock-thumb"></div>
+                <div class="mock-title">ダミーカードのタイトル</div>
+                <div class="mock-sub">サブテキストがここに入ります</div>
+              </div>
+            </div>
+
+            <div class="pnm-layout-preview" aria-label="全体レイアウトプレビュー">
+              <div class="mock-header">ヘッダー</div>
+              <div class="mock-list">
+                <div class="mock-item"></div>
+                <div class="mock-item"></div>
+                <div class="mock-item"></div>
+              </div>
+              <div class="mock-cta">ボタン</div>
+            </div>
+          </section>
+
+          <div class="modal-actions">
+            <button id="pnm-try" class="btn-ghost" type="button" title="この配色を一時的に適用して画面全体で試す">一時適用</button>
+            <div class="spacer"></div>
+            <button id="pnm-cancel" class="btn-ghost" type="button">閉じる</button>
+            <button id="pnm-save" class="btn-primary" type="button" disabled>保存（モック）</button>
           </div>
         </div>
       </div>
-      <div class="pnm-row">
-        <label class="pnm-key">アクセント<br><small>（ボタン等の強調）</small></label>
-        <div class="pnm-slot">
-          <div class="pnm-swatch" aria-hidden="true"></div>
-          <div class="pnm-tabs">
-            <button class="is-active" type="button">ピッカー</button>
-            <button type="button">既定色</button>
-            <button type="button">コード</button>
-          </div>
-        </div>
-      </div>
-      <div class="pnm-row">
-        <label class="pnm-key">サブ<br><small>（カード背景に使用）</small></label>
-        <div class="pnm-slot">
-          <div class="pnm-swatch" aria-hidden="true"></div>
-          <div class="pnm-tabs">
-            <button class="is-active" type="button">ピッカー</button>
-            <button type="button">既定色</button>
-            <button type="button">コード</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- 下段：プレビュー（左＝カード視認性、右＝画面の雰囲気） -->
-    <section class="pnm-preview">
-      <!-- カード視認性（サブ背景×ベース文字） -->
-      <div class="pnm-card-preview" aria-label="カード視認性プレビュー">
-        <div class="mock-card">
-          <div class="mock-thumb"></div>
-          <div class="mock-title">ダミーカードのタイトル</div>
-          <div class="mock-sub">サブテキストがここに入ります</div>
-        </div>
-      </div>
-
-      <!-- 画面全体の雰囲気（ヘッダー/リスト/ボタン） -->
-      <div class="pnm-layout-preview" aria-label="全体レイアウトプレビュー">
-        <div class="mock-header">ヘッダー</div>
-        <div class="mock-list">
-          <div class="mock-item"></div>
-          <div class="mock-item"></div>
-          <div class="mock-item"></div>
-        </div>
-        <div class="mock-cta">ボタン</div>
-      </div>
-    </section>
-
-    <div class="modal-actions">
-      <button id="pnm-cancel" class="btn-ghost" type="button">閉じる</button>
-      <button id="pnm-save" class="btn-primary" type="button" disabled>保存（モック）</button>
     </div>
-  </div>
-</div>
+
 
   </div><!-- /.app -->
   <!-- フルスクリーン表示モーダル -->

@@ -332,18 +332,138 @@ renderPaletteList = function(palettes, activeKey){
   if (panel) appendPaletteAddButton(panel);
 };
 
-// --- モーダル開閉（モック） ---
+/* ========= パレット作成モーダル（機能版） ========= */
+
+// 代表色プリセット（必要に応じて増やしてください）
+const PALETTE_PRESETS = [
+  '#000000','#333333','#666666','#888888','#AAAAAA','#FFFFFF',
+  '#7A6B58','#B07C6B','#C27D7B','#D27F7F','#E3A36F','#F4C66F',
+  '#D7E3E6','#EDE6D6','#F0F4F8','#F6E7EC','#E6F3EA','#EAF0E5',
+  '#1E88E5','#00ACC1','#26A69A','#43A047','#7CB342','#F4511E',
+];
+
+function normalizeHex(v){
+  const s = (v||'').trim();
+  if (/^#([0-9a-f]{3}){1,2}$/i.test(s)) {
+    return s.length===4
+      ? '#'+s.slice(1).split('').map(ch=>ch+ch).join('').toUpperCase()
+      : s.toUpperCase();
+  }
+  return '';
+}
+
+function getComputedCssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
+}
+
 function openPaletteNewModal(){
   const modal = document.getElementById('palette-new-modal');
   if (!modal) return;
-  modal.hidden = false;
-  const close = () => { modal.hidden = true; };
+  const panel = modal.querySelector('.modal-panel');
 
+  // 初期値＝現在のテーマ色
+  const state = {
+    base:   getComputedCssVar('--base-color')   || '#888888',
+    accent: getComputedCssVar('--accent-color') || '#7A6B58',
+    sub:    getComputedCssVar('--sub-color')    || '#D7E3E6',
+  };
+
+  // モーダル内CSS変数へ反映（リアルタイムプレビュー用）
+  const applyToModal = () => {
+    panel.style.setProperty('--m-base',   state.base);
+    panel.style.setProperty('--m-accent', state.accent);
+    panel.style.setProperty('--m-sub',    state.sub);
+
+    // スウォッチ塗り
+    modal.querySelectorAll('.pnm-row').forEach(row=>{
+      const key = row.dataset.key;
+      row.querySelector('.pnm-swatch').style.background = state[key];
+    });
+  };
+
+  // コントロール初期化
+  function initRow(row, key){
+    const picker = row.querySelector('.ctrl-picker');
+    const preset = row.querySelector('.ctrl-preset');
+    const code   = row.querySelector('.ctrl-code');
+
+    // 既定色プルダウンを構築
+    if (preset && !preset.children.length){
+      PALETTE_PRESETS.forEach(hex=>{
+        const opt = document.createElement('option');
+        opt.value = hex; opt.textContent = hex;
+        opt.style.background = hex;
+        preset.appendChild(opt);
+      });
+    }
+
+    // 初期値を各UIに同期
+    picker.value = state[key];
+    code.value   = state[key];
+    if (preset) preset.value = PALETTE_PRESETS.includes(state[key]) ? state[key] : PALETTE_PRESETS[0];
+
+    // 入力ハンドラ
+    picker.oninput = () => { state[key] = picker.value; code.value = state[key]; applyToModal(); };
+    preset.onchange = () => { state[key] = preset.value; picker.value = state[key]; code.value = state[key]; applyToModal(); };
+    code.oninput = () => {
+      const hex = normalizeHex(code.value);
+      if (hex){ state[key] = hex; picker.value = hex; preset.value = PALETTE_PRESETS.includes(hex)? hex : PALETTE_PRESETS[0]; applyToModal(); }
+    };
+
+    // 入力方法タブの切替
+    row.querySelector('.pnm-tabs').addEventListener('click', e=>{
+      const b = e.target.closest('button'); if(!b) return;
+      const mode = b.dataset.mode;
+      row.querySelectorAll('.pnm-tabs > button').forEach(x=>{
+        x.classList.toggle('is-active', x===b);
+        x.setAttribute('aria-selected', x===b ? 'true':'false');
+      });
+      picker.hidden = mode!=='picker';
+      preset.hidden = mode!=='preset';
+      code.hidden   = mode!=='code';
+    });
+  }
+
+  modal.hidden = false;
+  // Escや背景クリックで閉じる
+  const close = ()=>{ modal.hidden = true; cleanup(); };
   modal.querySelector('.modal-backdrop')?.addEventListener('click', close, { once:true });
   modal.querySelector('#pnm-cancel')?.addEventListener('click', close, { once:true });
-  modal.querySelector('.modal-panel')?.addEventListener('click', e => e.stopPropagation());
-  modal.addEventListener('keydown', e => { if (e.key === 'Escape') close(); }, { once:true });
+  modal.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); }, { once:true });
+
+  // 行ごと初期化
+  modal.querySelectorAll('.pnm-row').forEach(row => {
+    const key = row.dataset.key;
+    // 既存テーマから初期値
+    row.querySelector('.ctrl-picker').value = state[key];
+    row.querySelector('.ctrl-code').value   = state[key];
+    initRow(row, key);
+  });
+
+  // リストのバーと名前（ダミー）
+  const listbar = modal.querySelector('.pnm-listbar .name');
+  if (listbar) listbar.textContent = '（新規パレット）';
+
+  // 一時適用：ドキュメントに反映して“画面全体”を試す
+  modal.querySelector('#pnm-try')?.addEventListener('click', ()=>{
+    document.documentElement.style.setProperty('--base-color',   state.base);
+    document.documentElement.style.setProperty('--accent-color', state.accent);
+    document.documentElement.style.setProperty('--sub-color',    state.sub);
+    // パレットパネルのUIも見た目だけ同期しておくと混乱しない
+    showToast('一時適用しました（保存は未実装）');
+  });
+
+  // 保存はまだモック（将来：palettes.jsonへPOST/PATCH）
+  modal.querySelector('#pnm-save')?.addEventListener('click', ()=>{
+    showToast('保存は後続実装です', 'err');
+  });
+
+  // 初期反映
+  applyToModal();
+
+  function cleanup(){ /* 今回は特になし */ }
 }
+
 
 function applyFilters(){
   const kw = keyword.toLowerCase();
