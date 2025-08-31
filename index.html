@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-build" content="2025-08-28-06" />
+  <meta name="app-build" content="2025-08-31-01" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>キャラ図鑑</title>
-  <link rel="stylesheet" href="style.css?v=2025-08-28-06" />
+  <link rel="stylesheet" href="style.css?v=2025-08-31-01" />
 </head>
 <body>
   <!-- アプリ全体ラッパ -->
@@ -131,6 +131,79 @@
         </div>
       </div>
     </div>
+<!-- 新規パレット（モック）モーダル -->
+<div id="palette-new-modal" class="modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-panel palette-new" role="dialog" aria-modal="true" aria-labelledby="pnm-title">
+    <h3 id="pnm-title">新しいパレット（モック）</h3>
+    <p class="muted">ベース／アクセント／サブの3色を指定します。下でレイアウトの見え方を確認できます。</p>
+
+    <!-- 上段：3色の入力行（タブはダミー。配置イメージ用） -->
+    <section class="pnm-inputs">
+      <div class="pnm-row">
+        <label class="pnm-key">ベース<br><small>（文字色に使用）</small></label>
+        <div class="pnm-slot">
+          <div class="pnm-swatch" aria-hidden="true"></div>
+          <div class="pnm-tabs">
+            <button class="is-active" type="button">ピッカー</button>
+            <button type="button">既定色</button>
+            <button type="button">コード</button>
+          </div>
+        </div>
+      </div>
+      <div class="pnm-row">
+        <label class="pnm-key">アクセント<br><small>（ボタン等の強調）</small></label>
+        <div class="pnm-slot">
+          <div class="pnm-swatch" aria-hidden="true"></div>
+          <div class="pnm-tabs">
+            <button class="is-active" type="button">ピッカー</button>
+            <button type="button">既定色</button>
+            <button type="button">コード</button>
+          </div>
+        </div>
+      </div>
+      <div class="pnm-row">
+        <label class="pnm-key">サブ<br><small>（カード背景に使用）</small></label>
+        <div class="pnm-slot">
+          <div class="pnm-swatch" aria-hidden="true"></div>
+          <div class="pnm-tabs">
+            <button class="is-active" type="button">ピッカー</button>
+            <button type="button">既定色</button>
+            <button type="button">コード</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 下段：プレビュー（左＝カード視認性、右＝画面の雰囲気） -->
+    <section class="pnm-preview">
+      <!-- カード視認性（サブ背景×ベース文字） -->
+      <div class="pnm-card-preview" aria-label="カード視認性プレビュー">
+        <div class="mock-card">
+          <div class="mock-thumb"></div>
+          <div class="mock-title">ダミーカードのタイトル</div>
+          <div class="mock-sub">サブテキストがここに入ります</div>
+        </div>
+      </div>
+
+      <!-- 画面全体の雰囲気（ヘッダー/リスト/ボタン） -->
+      <div class="pnm-layout-preview" aria-label="全体レイアウトプレビュー">
+        <div class="mock-header">ヘッダー</div>
+        <div class="mock-list">
+          <div class="mock-item"></div>
+          <div class="mock-item"></div>
+          <div class="mock-item"></div>
+        </div>
+        <div class="mock-cta">ボタン</div>
+      </div>
+    </section>
+
+    <div class="modal-actions">
+      <button id="pnm-cancel" class="btn-ghost" type="button">閉じる</button>
+      <button id="pnm-save" class="btn-primary" type="button" disabled>保存（モック）</button>
+    </div>
+  </div>
+</div>
 
   </div><!-- /.app -->
   <!-- フルスクリーン表示モーダル -->
@@ -148,6 +221,6 @@
   </div>
 
   <!-- 末尾でJS（キャッシュ回避用のビルド番号付き） -->
-  <script src="script.js?v=2025-08-28-06"></script>
+  <script src="script.js?v=2025-08-31-01"></script>
 </body>
 </html>

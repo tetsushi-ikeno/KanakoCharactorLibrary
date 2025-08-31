@@ -709,3 +709,40 @@ body:not(.is-editing) .edit-actions{ display:none; }
   .card-media .card-img.wiggle,
   #detail-img.wiggle { animation: none; }
 }
+
+/* ===== Palette New (mock) ===== */
+.palette-new { width: min(760px, 94vw); }
+
+.pnm-inputs { display: grid; gap: 10px; margin: 12px 0 14px; }
+.pnm-row { display: grid; grid-template-columns: 9.5em 1fr; gap: 10px; align-items: center; }
+.pnm-key { color: #444; }
+.pnm-slot { display: grid; grid-template-columns: 80px 1fr; gap: 10px; align-items: center; }
+.pnm-swatch { height: 36px; border-radius: 8px; border: 1px dashed #ccc; background: #f7f7f7; }
+.pnm-tabs { display: inline-flex; gap: 6px; }
+.pnm-tabs > button { min-height: 32px; padding: 4px 10px; border-radius: 999px; border:1px solid var(--border); background:#fff; cursor: default; }
+.pnm-tabs > button.is-active { background: #fafafa; }
+
+.pnm-preview { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; align-items: start; }
+.pnm-card-preview, .pnm-layout-preview { background:#fff; border:1px solid var(--border); border-radius:12px; padding: 12px; }
+
+/* カード視認性（サブ背景×ベース文字の想定で配色） */
+.mock-card { background: var(--sub-color); border:1px solid color-mix(in srgb, var(--sub-color) 85%, #000); border-radius: 10px; padding: 12px; }
+.mock-thumb { height: 96px; border-radius: 8px; background: color-mix(in srgb, var(--sub-color) 80%, #fff); margin-bottom: 10px; }
+.mock-title { color: var(--base-color); font-weight: 700; margin-bottom: 6px; }
+.mock-sub { color: var(--base-color); opacity: .85; font-size: 13px; }
+
+/* 画面全体の雰囲気（簡易ワイヤー） */
+.mock-header { background: var(--sub-color); color: var(--base-color); border:1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; text-align:center; }
+.mock-list { display: grid; gap: 8px; }
+.mock-item { height: 44px; border-radius: 8px; background: #fff; border:1px solid var(--border); }
+.mock-cta { margin-top: 10px; text-align:center; padding: 10px 12px; border-radius: 8px;
+  background: var(--accent-color); color: var(--base-color); border:1px solid var(--accent-color);
+}
+
+/* パレット一覧の末尾に置く“＋”見た目 */
+.palette-option.palette-add { justify-content: center; gap: 8px; }
+.palette-option.palette-add .bars { width: 140px; position: relative; }
+.palette-option.palette-add .bars::before {
+  content: "+"; position:absolute; inset:0; display:grid; place-items:center; font-weight:700; color:#666;
+  background: repeating-linear-gradient(90deg, #eee, #eee 10px, #f7f7f7 10px, #f7f7f7 20px);
+}

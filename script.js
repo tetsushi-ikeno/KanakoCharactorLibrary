@@ -311,6 +311,39 @@ function renderList(list){
 
   wrap.appendChild(frag);
 }
+// --- 末尾に「＋ 新しいパレット」を追加（モック起動） ---
+function appendPaletteAddButton(panel){
+  const add = document.createElement('button');
+  add.className = 'palette-option palette-add';
+  add.setAttribute('type','button');
+  add.innerHTML = `
+    <div class="bars"></div>
+    <div class="label">新しいパレット</div>
+  `;
+  add.addEventListener('click', openPaletteNewModal);
+  panel.appendChild(add);
+}
+
+// 既存の一覧描画の最後で呼ぶ
+const _renderPaletteList = renderPaletteList;
+renderPaletteList = function(palettes, activeKey){
+  _renderPaletteList(palettes, activeKey);
+  const panel = document.getElementById('palette-panel');
+  if (panel) appendPaletteAddButton(panel);
+};
+
+// --- モーダル開閉（モック） ---
+function openPaletteNewModal(){
+  const modal = document.getElementById('palette-new-modal');
+  if (!modal) return;
+  modal.hidden = false;
+  const close = () => { modal.hidden = true; };
+
+  modal.querySelector('.modal-backdrop')?.addEventListener('click', close, { once:true });
+  modal.querySelector('#pnm-cancel')?.addEventListener('click', close, { once:true });
+  modal.querySelector('.modal-panel')?.addEventListener('click', e => e.stopPropagation());
+  modal.addEventListener('keydown', e => { if (e.key === 'Escape') close(); }, { once:true });
+}
 
 function applyFilters(){
   const kw = keyword.toLowerCase();
