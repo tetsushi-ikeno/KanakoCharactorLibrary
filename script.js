@@ -355,65 +355,96 @@ function normalizeHex(v){
 function getComputedCssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
 }
+// --- 外部ライブラリを必要時だけ読み込む ---
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) {
+      // すでに読み込み済みならOK
+      return resolve();
+    }
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+async function ensureColorLibs() {
+  if (!window.culori) await loadScriptOnce('https://unpkg.com/culori@3.3.0/dist/culori.umd.min.js');
+  if (!window.iro)    await loadScriptOnce('https://unpkg.com/iro@5.5.2/dist/iro.min.js');
+}
 
-function openPaletteNewModal(){
+async function openPaletteNewModal(){
+  await ensureColorLibs(); // ここで culori / iro を保証
+
   const modal = document.getElementById('palette-new-modal');
   if (!modal) return;
   const panel = modal.querySelector('.modal-panel');
 
-  // 初期値＝現在のテーマ色
+  // ------------- culori helpers -------------
+  const { converter, formatHex } = window.culori;
+  const toOklch  = converter('oklch');
+  const fromOklch = (oklch) => formatHex(oklch);
+
+  function lumRGB(c){ const cs=c/255; return cs<=0.03928 ? cs/12.92 : Math.pow((cs+0.055)/1.055,2.4); }
+  function hexToRgb(hex){ const s=hex.replace('#',''); return { r:parseInt(s.slice(0,2),16), g:parseInt(s.slice(2,4),16), b:parseInt(s.slice(4,6),16) }; }
+  function contrast(h1,h2){
+    const a=hexToRgb(h1), b=hexToRgb(h2);
+    const L1=0.2126*lumRGB(a.r)+0.7152*lumRGB(a.g)+0.0722*lumRGB(a.b);
+    const L2=0.2126*lumRGB(b.r)+0.7152*lumRGB(b.g)+0.0722*lumRGB(b.b);
+    return (Math.max(L1,L2)+0.05)/(Math.min(L1,L2)+0.05);
+  }
+  const rotHue = (h,deg)=>{ let nh=(h+deg)%360; if(nh<0) nh+=360; return nh; };
+
+  // ------------- 初期状態 -------------
   const state = {
     base:   getComputedCssVar('--base-color')   || '#888888',
     accent: getComputedCssVar('--accent-color') || '#7A6B58',
     sub:    getComputedCssVar('--sub-color')    || '#D7E3E6',
   };
 
-  // モーダル内CSS変数へ反映（リアルタイムプレビュー用）
   const applyToModal = () => {
     panel.style.setProperty('--m-base',   state.base);
     panel.style.setProperty('--m-accent', state.accent);
     panel.style.setProperty('--m-sub',    state.sub);
-
-    // スウォッチ塗り
     modal.querySelectorAll('.pnm-row').forEach(row=>{
-      const key = row.dataset.key;
-      row.querySelector('.pnm-swatch').style.background = state[key];
+      const key=row.dataset.key; row.querySelector('.pnm-swatch').style.background = state[key];
     });
+    // 上部バー
+    const lb = modal.querySelector('.pnm-listbar .bars');
+    if (lb){
+      lb.querySelector('.base').style.background   = state.base;
+      lb.querySelector('.accent').style.background = state.accent;
+      lb.querySelector('.sub').style.background    = state.sub;
+    }
   };
 
-  // コントロール初期化
+  // ------------- 入力行の初期化 -------------
   function initRow(row, key){
     const picker = row.querySelector('.ctrl-picker');
     const preset = row.querySelector('.ctrl-preset');
     const code   = row.querySelector('.ctrl-code');
 
-    // 既定色プルダウンを構築
     if (preset && !preset.children.length){
       PALETTE_PRESETS.forEach(hex=>{
-        const opt = document.createElement('option');
-        opt.value = hex; opt.textContent = hex;
-        opt.style.background = hex;
+        const opt=document.createElement('option'); opt.value=hex; opt.textContent=hex; opt.style.background=hex;
         preset.appendChild(opt);
       });
     }
-
-    // 初期値を各UIに同期
     picker.value = state[key];
     code.value   = state[key];
-    if (preset) preset.value = PALETTE_PRESETS.includes(state[key]) ? state[key] : PALETTE_PRESETS[0];
+    if (preset)  preset.value = PALETTE_PRESETS.includes(state[key]) ? state[key] : PALETTE_PRESETS[0];
 
-    // 入力ハンドラ
-    picker.oninput = () => { state[key] = picker.value; code.value = state[key]; applyToModal(); };
-    preset.onchange = () => { state[key] = preset.value; picker.value = state[key]; code.value = state[key]; applyToModal(); };
-    code.oninput = () => {
+    picker.oninput = ()=>{ state[key]=picker.value; code.value=state[key]; applyToModal(); };
+    preset.onchange= ()=>{ state[key]=preset.value; picker.value=state[key]; code.value=state[key]; applyToModal(); };
+    code.oninput   = ()=>{
       const hex = normalizeHex(code.value);
-      if (hex){ state[key] = hex; picker.value = hex; preset.value = PALETTE_PRESETS.includes(hex)? hex : PALETTE_PRESETS[0]; applyToModal(); }
+      if (hex){ state[key]=hex; picker.value=hex; if(preset) preset.value = PALETTE_PRESETS.includes(hex)?hex:PALETTE_PRESETS[0]; applyToModal(); }
     };
 
-    // 入力方法タブの切替
     row.querySelector('.pnm-tabs').addEventListener('click', e=>{
-      const b = e.target.closest('button'); if(!b) return;
-      const mode = b.dataset.mode;
+      const b=e.target.closest('button'); if(!b) return;
+      const mode=b.dataset.mode;
       row.querySelectorAll('.pnm-tabs > button').forEach(x=>{
         x.classList.toggle('is-active', x===b);
         x.setAttribute('aria-selected', x===b ? 'true':'false');
@@ -424,241 +455,127 @@ function openPaletteNewModal(){
     });
   }
 
-  // culori helpers
-const { converter, formatHex, clampChroma, mapAlpha, darken, brighten } = culori;
-const toOklch = converter('oklch');
-const fromOklch = (oklch) => formatHex(oklch); // culoriはHex文字列を返せます
+  // ------------- サジェスト生成と描画 -------------
+  function makePaletteFromBase(baseHex){
+    const b = toOklch(baseHex); // {l,c,h}
+    const sub = { l: Math.min(1, b.l + 0.06), c: Math.max(0, b.c - 0.02), h: b.h };
+    const makeAcc = (deg)=>({ l:0.60, c:Math.max(0.10, b.c+0.08), h:rotHue(b.h||0,deg) });
 
-// WCAG 2.1 コントラスト簡易チェック
-function lumRGB(c){ // sRGB → 相対輝度
-  const cs = c/255;
-  return (cs <= 0.03928) ? cs/12.92 : Math.pow((cs+0.055)/1.055, 2.4);
-}
-function hexToRgb(hex){
-  const s = hex.replace('#',''); return {
-    r: parseInt(s.slice(0,2),16), g: parseInt(s.slice(2,4),16), b: parseInt(s.slice(4,6),16)
-  };
-}
-function contrast(hex1, hex2){
-  const a = hexToRgb(hex1), b = hexToRgb(hex2);
-  const L1 = 0.2126*lumRGB(a.r)+0.7152*lumRGB(a.g)+0.0722*lumRGB(a.b);
-  const L2 = 0.2126*lumRGB(b.r)+0.7152*lumRGB(b.g)+0.0722*lumRGB(b.b);
-  const lighter = Math.max(L1,L2)+0.05, darker = Math.min(L1,L2)+0.05;
-  return lighter/darker; // 4.5以上が小テキスト目安
-}
-
-// hue回転（度数）
-function rotHue(h, deg){
-  let nh = (h + deg) % 360;
-  if (nh < 0) nh += 360;
-  return nh;
-}
-
-function makePaletteFromBase(baseHex){
-  // ベース OKLCH
-  const b = toOklch(baseHex); // {l,c,h}
-  // サブ：同系色で L↑ / C↓
-  const sub = { l: Math.min(1, b.l + 0.06), c: Math.max(0, b.c - 0.02), h: b.h };
-  // アクセント候補を作るヘルパ
-  const makeAcc = (deg) => ({
-    l: 0.60,                   // 見栄えが出やすい帯域
-    c: Math.max(0.10, b.c+0.08), // ベースより鮮やかに
-    h: rotHue(b.h || 0, deg)
-  });
-  return {
-    base: baseHex,
-    schemes: [
-      { key:'complement',  title:'補色',       acc: [makeAcc(180), makeAcc(176), makeAcc(184)] },
-      { key:'split',       title:'分割補色',   acc: [makeAcc(150), makeAcc(210), makeAcc(330)] },
-      { key:'triad',       title:'トライアド', acc: [makeAcc(120), makeAcc(240), makeAcc(-120)] },
-    ].map(g => ({
+    return [
+      { key:'complement',  title:'補色',       acc:[makeAcc(180), makeAcc(176), makeAcc(184)] },
+      { key:'split',       title:'分割補色',   acc:[makeAcc(150), makeAcc(210), makeAcc(330)] },
+      { key:'triad',       title:'トライアド', acc:[makeAcc(120), makeAcc(240), makeAcc(-120)] },
+    ].map(g=>({
       ...g,
-      variants: g.acc.map(a => {
-        const accentHex = fromOklch(a);
-        const subHex    = fromOklch(sub);
-        return { base: baseHex, accent: accentHex, sub: subHex };
-      })
-    }))
-  };
-}
+      variants: g.acc.map(a=>({ base:baseHex, accent:fromOklch(a), sub:fromOklch(sub) }))
+    }));
+  }
 
-function renderSuggestGroups(container, mk){
-  container.innerHTML = '';
-  mk.schemes.forEach(group=>{
-    const box = document.createElement('div');
-    box.className = 'suggest-group';
-    box.innerHTML = `<div class="suggest-title">${group.title}</div><div class="suggest-cards"></div>`;
-    const wrap = box.querySelector('.suggest-cards');
+  function renderSuggestGroups(container, schemes){
+    container.innerHTML='';
+    schemes.forEach(group=>{
+      const box=document.createElement('div');
+      box.className='suggest-group';
+      box.innerHTML=`<div class="suggest-title">${group.title}</div><div class="suggest-cards"></div>`;
+      const wrap=box.querySelector('.suggest-cards');
 
-    group.variants.forEach(v=>{
-      const c = document.createElement('button');
-      c.type = 'button';
-      c.className = 's-card';
-      c.innerHTML = `
-        <div class="bars">
-          <div class="b" style="background:${v.base}"></div>
-          <div class="a" style="background:${v.accent}"></div>
-          <div class="s" style="background:${v.sub}"></div>
-        </div>
-        <div class="mini">
-          <div class="hdr" style="background:${v.sub}; color:${v.base};">ヘッダー</div>
-          <div class="btn" style="background:${v.accent}; color:${v.base};">ボタン</div>
-        </div>
-        <div class="badges"></div>
-      `;
-      // コントラスト判定バッジ
-      const badges = c.querySelector('.badges');
-      const cardCT = contrast(v.base, v.sub);
-      const btnCT  = contrast(v.base, v.accent);
-      const b1 = document.createElement('span');
-      b1.className = 'badge ' + (cardCT>=4.5?'ok':'warn');
-      b1.textContent = 'カード '+cardCT.toFixed(1);
-      const b2 = document.createElement('span');
-      b2.className = 'badge ' + (btnCT>=4.5?'ok':'warn');
-      b2.textContent = 'ボタン '+btnCT.toFixed(1);
-      badges.append(b1,b2);
+      group.variants.forEach(v=>{
+        const c=document.createElement('button');
+        c.type='button'; c.className='s-card';
+        c.innerHTML=`
+          <div class="bars">
+            <div class="b" style="background:${v.base}"></div>
+            <div class="a" style="background:${v.accent}"></div>
+            <div class="s" style="background:${v.sub}"></div>
+          </div>
+          <div class="mini">
+            <div class="hdr" style="background:${v.sub}; color:${v.base};">ヘッダー</div>
+            <div class="btn" style="background:${v.accent}; color:${v.base};">ボタン</div>
+          </div>
+          <div class="badges"></div>
+        `;
+        const badges=c.querySelector('.badges');
+        const cardCT=contrast(v.base, v.sub);
+        const btnCT =contrast(v.base, v.accent);
+        const b1=document.createElement('span'); b1.className='badge '+(cardCT>=4.5?'ok':'warn'); b1.textContent='カード '+cardCT.toFixed(1);
+        const b2=document.createElement('span'); b2.className='badge '+(btnCT >=4.5?'ok':'warn'); b2.textContent='ボタン '+btnCT .toFixed(1);
+        badges.append(b1,b2);
 
-      // クリックで適用
-      c.addEventListener('click', ()=>{
-        // モーダル内のstateに反映
-        applySuggestedToModal(v);
+        c.addEventListener('click', ()=>{
+          state.base=v.base; state.accent=v.accent; state.sub=v.sub; // ← stateも更新
+          // 入力UIに反映
+          ['base','accent','sub'].forEach(k=>{
+            const row = modal.querySelector(`.pnm-row[data-key="${k}"]`);
+            row.querySelector('.ctrl-picker').value = state[k];
+            row.querySelector('.ctrl-code').value   = state[k];
+          });
+          applyToModal();
+          // ベースの L/C スライダーも同期
+          const o = toOklch(state.base);
+          modal.querySelector('#baseL').value = o.l.toFixed(2);
+          modal.querySelector('#baseC').value = Math.min(0.25, Math.max(0,o.c)).toFixed(3);
+        });
+        wrap.appendChild(c);
       });
-      wrap.appendChild(c);
+      container.appendChild(box);
     });
-    container.appendChild(box);
-  });
-}
+  }
 
-function applySuggestedToModal(v){
-  // 入力エリアの3色も同期（ピッカー/コード）
-  const modal = document.getElementById('palette-new-modal');
-  const rows = modal.querySelectorAll('.pnm-row');
-  const set = (key, hex) => {
-    const row = [...rows].find(r=>r.dataset.key===key);
-    row.querySelector('.ctrl-picker').value = hex;
-    row.querySelector('.ctrl-code').value   = hex;
-  };
-  set('base', v.base);
-  set('accent', v.accent);
-  set('sub', v.sub);
-
-  // 「一時適用」と同じくモーダル内CSS変数＆プレビューを更新
-  const panel = modal.querySelector('.modal-panel');
-  panel.style.setProperty('--m-base', v.base);
-  panel.style.setProperty('--m-accent', v.accent);
-  panel.style.setProperty('--m-sub', v.sub);
-
-  // スウォッチ
-  rows.forEach(r=>{
-    const key = r.dataset.key;
-    const hex = v[key];
-    r.querySelector('.pnm-swatch').style.background = hex;
-  });
-
-  // 上部のバー
-  const listbar = modal.querySelector('.pnm-listbar .bars');
-  listbar.querySelector('.base').style.background   = v.base;
-  listbar.querySelector('.accent').style.background = v.accent;
-  listbar.querySelector('.sub').style.background    = v.sub;
-}
-
-
+  // ------------- モーダル開く -------------
   modal.hidden = false;
-  // Escや背景クリックで閉じる
-  const close = ()=>{ modal.hidden = true; cleanup(); };
+  const close = ()=>{ modal.hidden=true; };
   modal.querySelector('.modal-backdrop')?.addEventListener('click', close, { once:true });
   modal.querySelector('#pnm-cancel')?.addEventListener('click', close, { once:true });
-  modal.addEventListener('keydown', (e)=>{ if(e.key==='Escape') close(); }, { once:true });
+  modal.addEventListener('keydown', e=>{ if(e.key==='Escape') close(); }, { once:true });
 
-  // 行ごと初期化
-  modal.querySelectorAll('.pnm-row').forEach(row => {
-    const key = row.dataset.key;
-    // 既存テーマから初期値
-    row.querySelector('.ctrl-picker').value = state[key];
-    row.querySelector('.ctrl-code').value   = state[key];
-    initRow(row, key);
-  });
+  // 行初期化
+  modal.querySelectorAll('.pnm-row').forEach(row => initRow(row, row.dataset.key));
+  const listbar = modal.querySelector('.pnm-listbar .name'); if (listbar) listbar.textContent = '（新規パレット）';
 
-  // リストのバーと名前（ダミー）
-  const listbar = modal.querySelector('.pnm-listbar .name');
-  if (listbar) listbar.textContent = '（新規パレット）';
-
-  // 一時適用：ドキュメントに反映して“画面全体”を試す
+  // 一時適用：現在stateをDOM全体へ
   modal.querySelector('#pnm-try')?.addEventListener('click', ()=>{
     document.documentElement.style.setProperty('--base-color',   state.base);
     document.documentElement.style.setProperty('--accent-color', state.accent);
     document.documentElement.style.setProperty('--sub-color',    state.sub);
-    // パレットパネルのUIも見た目だけ同期しておくと混乱しない
     showToast('一時適用しました（保存は未実装）');
   });
-
-  // 保存はまだモック（将来：palettes.jsonへPOST/PATCH）
-  modal.querySelector('#pnm-save')?.addEventListener('click', ()=>{
-    showToast('保存は後続実装です', 'err');
-  });
+  modal.querySelector('#pnm-save')?.addEventListener('click', ()=> showToast('保存は後続実装です','err'));
 
   // 初期反映
   applyToModal();
-//
-// 既存 openPaletteNewModal() の末尾あたりに “ホイール初期化＆サジェスト作成” を追記
-//
-(function patchModalForWheel(){
-  const origOpen = openPaletteNewModal;
-  openPaletteNewModal = function(){
-    origOpen(); // 元の初期化（state, applyToModal など）を実行
 
-    const modal = document.getElementById('palette-new-modal');
-    const panel = modal.querySelector('.modal-panel');
-    const suggestWrap = modal.querySelector('#suggestGroups');
-    const baseL = modal.querySelector('#baseL');
-    const baseC = modal.querySelector('#baseC');
+  // ------------- ホイール初期化 -------------
+  const suggestWrap = modal.querySelector('#suggestGroups');
+  const baseL = modal.querySelector('#baseL');
+  const baseC = modal.querySelector('#baseC');
 
-    // 現在のベース（モーダルCSS変数から）
-    let baseHex = getComputedStyle(panel).getPropertyValue('--m-base').trim() || '#888888';
-    // ホイール作成
-    const wheel = new iro.ColorPicker('#baseColorWheel', {
-      width: 260, color: baseHex, layout: [{ component: iro.ui.Wheel }]
-    });
+  const wheel = new window.iro.ColorPicker('#baseColorWheel', {
+    width: 260, color: state.base, layout: [{ component: window.iro.ui.Wheel }]
+  });
+  const b0 = toOklch(state.base);
+  baseL.value = b0.l.toFixed(2);
+  baseC.value = Math.min(0.25, Math.max(0,b0.c)).toFixed(3);
 
-    // L/C スライダー初期値（OKLCHで）
-    const b0 = toOklch(baseHex);
-    baseL.value = b0.l.toFixed(2);
-    baseC.value = Math.min(0.25, Math.max(0, b0.c)).toFixed(3);
-
-    function updateFromWheel(){
-      // wheelはHSL基準なので、いったんHEX→OKLCH
-      let hex = wheel.color.hexString;
-      let o = toOklch(hex);
-      // L/Cはスライダーで上書き
-      o.l = parseFloat(baseL.value);
-      o.c = parseFloat(baseC.value);
-      // 再HEX
-      baseHex = fromOklch(o);
-      // モーダルCSSに反映（即プレビュー）
-      panel.style.setProperty('--m-base', baseHex);
-      // 上行スウォッチ＆入力も同期
-      const baseRow = modal.querySelector('.pnm-row[data-key="base"]');
-      baseRow.querySelector('.pnm-swatch').style.background = baseHex;
-      baseRow.querySelector('.ctrl-picker').value = baseHex;
-      baseRow.querySelector('.ctrl-code').value   = baseHex;
-
-      // サジェスト再生成
-      const mk = makePaletteFromBase(baseHex);
-      renderSuggestGroups(suggestWrap, mk);
-    }
-
-    wheel.on('input:end', updateFromWheel);
-    baseL.addEventListener('input', updateFromWheel);
-    baseC.addEventListener('input', updateFromWheel);
-
-    // 最初の描画
-    const mk0 = makePaletteFromBase(baseHex);
-    renderSuggestGroups(suggestWrap, mk0);
+  const regenerate = ()=>{
+    const hex = wheel.color.hexString;
+    const o = toOklch(hex);
+    o.l = parseFloat(baseL.value); o.c = parseFloat(baseC.value);
+    state.base = fromOklch(o);
+    applyToModal();
+    // 入力欄（ベース）も同期
+    const baseRow = modal.querySelector('.pnm-row[data-key="base"]');
+    baseRow.querySelector('.ctrl-picker').value = state.base;
+    baseRow.querySelector('.ctrl-code').value   = state.base;
+    // サジェスト描画
+    renderSuggestGroups(suggestWrap, makePaletteFromBase(state.base));
   };
-})();
-  function cleanup(){ /* 今回は特になし */ }
-}
+  wheel.on('input:end', regenerate);
+  baseL.addEventListener('input', regenerate);
+  baseC.addEventListener('input', regenerate);
 
+  // 初回サジェスト
+  renderSuggestGroups(suggestWrap, makePaletteFromBase(state.base));
+}
 
 function applyFilters(){
   const kw = keyword.toLowerCase();
