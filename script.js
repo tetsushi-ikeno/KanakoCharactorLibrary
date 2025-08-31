@@ -424,6 +424,145 @@ function openPaletteNewModal(){
     });
   }
 
+  // culori helpers
+const { converter, formatHex, clampChroma, mapAlpha, darken, brighten } = culori;
+const toOklch = converter('oklch');
+const fromOklch = (oklch) => formatHex(oklch); // culoriはHex文字列を返せます
+
+// WCAG 2.1 コントラスト簡易チェック
+function lumRGB(c){ // sRGB → 相対輝度
+  const cs = c/255;
+  return (cs <= 0.03928) ? cs/12.92 : Math.pow((cs+0.055)/1.055, 2.4);
+}
+function hexToRgb(hex){
+  const s = hex.replace('#',''); return {
+    r: parseInt(s.slice(0,2),16), g: parseInt(s.slice(2,4),16), b: parseInt(s.slice(4,6),16)
+  };
+}
+function contrast(hex1, hex2){
+  const a = hexToRgb(hex1), b = hexToRgb(hex2);
+  const L1 = 0.2126*lumRGB(a.r)+0.7152*lumRGB(a.g)+0.0722*lumRGB(a.b);
+  const L2 = 0.2126*lumRGB(b.r)+0.7152*lumRGB(b.g)+0.0722*lumRGB(b.b);
+  const lighter = Math.max(L1,L2)+0.05, darker = Math.min(L1,L2)+0.05;
+  return lighter/darker; // 4.5以上が小テキスト目安
+}
+
+// hue回転（度数）
+function rotHue(h, deg){
+  let nh = (h + deg) % 360;
+  if (nh < 0) nh += 360;
+  return nh;
+}
+
+function makePaletteFromBase(baseHex){
+  // ベース OKLCH
+  const b = toOklch(baseHex); // {l,c,h}
+  // サブ：同系色で L↑ / C↓
+  const sub = { l: Math.min(1, b.l + 0.06), c: Math.max(0, b.c - 0.02), h: b.h };
+  // アクセント候補を作るヘルパ
+  const makeAcc = (deg) => ({
+    l: 0.60,                   // 見栄えが出やすい帯域
+    c: Math.max(0.10, b.c+0.08), // ベースより鮮やかに
+    h: rotHue(b.h || 0, deg)
+  });
+  return {
+    base: baseHex,
+    schemes: [
+      { key:'complement',  title:'補色',       acc: [makeAcc(180), makeAcc(176), makeAcc(184)] },
+      { key:'split',       title:'分割補色',   acc: [makeAcc(150), makeAcc(210), makeAcc(330)] },
+      { key:'triad',       title:'トライアド', acc: [makeAcc(120), makeAcc(240), makeAcc(-120)] },
+    ].map(g => ({
+      ...g,
+      variants: g.acc.map(a => {
+        const accentHex = fromOklch(a);
+        const subHex    = fromOklch(sub);
+        return { base: baseHex, accent: accentHex, sub: subHex };
+      })
+    }))
+  };
+}
+
+function renderSuggestGroups(container, mk){
+  container.innerHTML = '';
+  mk.schemes.forEach(group=>{
+    const box = document.createElement('div');
+    box.className = 'suggest-group';
+    box.innerHTML = `<div class="suggest-title">${group.title}</div><div class="suggest-cards"></div>`;
+    const wrap = box.querySelector('.suggest-cards');
+
+    group.variants.forEach(v=>{
+      const c = document.createElement('button');
+      c.type = 'button';
+      c.className = 's-card';
+      c.innerHTML = `
+        <div class="bars">
+          <div class="b" style="background:${v.base}"></div>
+          <div class="a" style="background:${v.accent}"></div>
+          <div class="s" style="background:${v.sub}"></div>
+        </div>
+        <div class="mini">
+          <div class="hdr" style="background:${v.sub}; color:${v.base};">ヘッダー</div>
+          <div class="btn" style="background:${v.accent}; color:${v.base};">ボタン</div>
+        </div>
+        <div class="badges"></div>
+      `;
+      // コントラスト判定バッジ
+      const badges = c.querySelector('.badges');
+      const cardCT = contrast(v.base, v.sub);
+      const btnCT  = contrast(v.base, v.accent);
+      const b1 = document.createElement('span');
+      b1.className = 'badge ' + (cardCT>=4.5?'ok':'warn');
+      b1.textContent = 'カード '+cardCT.toFixed(1);
+      const b2 = document.createElement('span');
+      b2.className = 'badge ' + (btnCT>=4.5?'ok':'warn');
+      b2.textContent = 'ボタン '+btnCT.toFixed(1);
+      badges.append(b1,b2);
+
+      // クリックで適用
+      c.addEventListener('click', ()=>{
+        // モーダル内のstateに反映
+        applySuggestedToModal(v);
+      });
+      wrap.appendChild(c);
+    });
+    container.appendChild(box);
+  });
+}
+
+function applySuggestedToModal(v){
+  // 入力エリアの3色も同期（ピッカー/コード）
+  const modal = document.getElementById('palette-new-modal');
+  const rows = modal.querySelectorAll('.pnm-row');
+  const set = (key, hex) => {
+    const row = [...rows].find(r=>r.dataset.key===key);
+    row.querySelector('.ctrl-picker').value = hex;
+    row.querySelector('.ctrl-code').value   = hex;
+  };
+  set('base', v.base);
+  set('accent', v.accent);
+  set('sub', v.sub);
+
+  // 「一時適用」と同じくモーダル内CSS変数＆プレビューを更新
+  const panel = modal.querySelector('.modal-panel');
+  panel.style.setProperty('--m-base', v.base);
+  panel.style.setProperty('--m-accent', v.accent);
+  panel.style.setProperty('--m-sub', v.sub);
+
+  // スウォッチ
+  rows.forEach(r=>{
+    const key = r.dataset.key;
+    const hex = v[key];
+    r.querySelector('.pnm-swatch').style.background = hex;
+  });
+
+  // 上部のバー
+  const listbar = modal.querySelector('.pnm-listbar .bars');
+  listbar.querySelector('.base').style.background   = v.base;
+  listbar.querySelector('.accent').style.background = v.accent;
+  listbar.querySelector('.sub').style.background    = v.sub;
+}
+
+
   modal.hidden = false;
   // Escや背景クリックで閉じる
   const close = ()=>{ modal.hidden = true; cleanup(); };
@@ -460,7 +599,63 @@ function openPaletteNewModal(){
 
   // 初期反映
   applyToModal();
+//
+// 既存 openPaletteNewModal() の末尾あたりに “ホイール初期化＆サジェスト作成” を追記
+//
+(function patchModalForWheel(){
+  const origOpen = openPaletteNewModal;
+  openPaletteNewModal = function(){
+    origOpen(); // 元の初期化（state, applyToModal など）を実行
 
+    const modal = document.getElementById('palette-new-modal');
+    const panel = modal.querySelector('.modal-panel');
+    const suggestWrap = modal.querySelector('#suggestGroups');
+    const baseL = modal.querySelector('#baseL');
+    const baseC = modal.querySelector('#baseC');
+
+    // 現在のベース（モーダルCSS変数から）
+    let baseHex = getComputedStyle(panel).getPropertyValue('--m-base').trim() || '#888888';
+    // ホイール作成
+    const wheel = new iro.ColorPicker('#baseColorWheel', {
+      width: 260, color: baseHex, layout: [{ component: iro.ui.Wheel }]
+    });
+
+    // L/C スライダー初期値（OKLCHで）
+    const b0 = toOklch(baseHex);
+    baseL.value = b0.l.toFixed(2);
+    baseC.value = Math.min(0.25, Math.max(0, b0.c)).toFixed(3);
+
+    function updateFromWheel(){
+      // wheelはHSL基準なので、いったんHEX→OKLCH
+      let hex = wheel.color.hexString;
+      let o = toOklch(hex);
+      // L/Cはスライダーで上書き
+      o.l = parseFloat(baseL.value);
+      o.c = parseFloat(baseC.value);
+      // 再HEX
+      baseHex = fromOklch(o);
+      // モーダルCSSに反映（即プレビュー）
+      panel.style.setProperty('--m-base', baseHex);
+      // 上行スウォッチ＆入力も同期
+      const baseRow = modal.querySelector('.pnm-row[data-key="base"]');
+      baseRow.querySelector('.pnm-swatch').style.background = baseHex;
+      baseRow.querySelector('.ctrl-picker').value = baseHex;
+      baseRow.querySelector('.ctrl-code').value   = baseHex;
+
+      // サジェスト再生成
+      const mk = makePaletteFromBase(baseHex);
+      renderSuggestGroups(suggestWrap, mk);
+    }
+
+    wheel.on('input:end', updateFromWheel);
+    baseL.addEventListener('input', updateFromWheel);
+    baseC.addEventListener('input', updateFromWheel);
+
+    // 最初の描画
+    const mk0 = makePaletteFromBase(baseHex);
+    renderSuggestGroups(suggestWrap, mk0);
+  };
+})();
   function cleanup(){ /* 今回は特になし */ }
 }
 

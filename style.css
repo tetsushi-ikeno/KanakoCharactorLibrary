@@ -826,3 +826,35 @@ body:not(.is-editing) .edit-actions{ display:none; }
 .palette-new .btn-ghost{ background:#fff; }
 .palette-new .modal-actions{ display:flex; align-items:center; gap: 8px; margin-top: 10px; }
 .palette-new .modal-actions .spacer{ flex:1; }
+
+/* ===== Assistant (wheel + suggestions) ===== */
+.palette-new .pnm-assistant{
+  display:grid; grid-template-columns: 320px 1fr; gap:16px;
+  margin: 10px 0 14px;
+}
+.pnm-assistant .assist-left, .pnm-assistant .assist-right{
+  background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px;
+}
+.pnm-assistant h4{ margin: 0 0 8px; font-size: 15px; }
+#baseColorWheel.wheel{ width:280px; height:280px; margin:auto; }
+.lc-controls{ display:grid; gap:6px; margin-top:10px; }
+.lc-controls label{ display:grid; grid-template-columns: 7em 1fr; align-items:center; gap:8px; font-size:13px; }
+.pnm-assistant .tip{ color:#666; font-size:12px; margin-top:6px; }
+
+.suggest-groups{ display:grid; gap:10px; }
+.suggest-group{ border:1px solid var(--border); border-radius:12px; padding:10px; background:#fff; }
+.suggest-title{ font-size:13px; color:#555; margin-bottom:8px; }
+.suggest-cards{ display:grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap:8px; }
+.s-card{ border:1px solid var(--border); border-radius:10px; padding:8px; background:#fff; cursor:pointer; }
+.s-card:hover{ box-shadow: 0 1px 0 rgba(0,0,0,.05), 0 0 0 2px color-mix(in srgb, var(--m-accent) 35%, transparent); }
+.s-card .bars{ height:16px; border:1px solid #e4e4e4; border-radius:8px; overflow:hidden; display:flex; margin-bottom:6px; }
+.s-card .bars .b{ flex:8; }
+.s-card .bars .a{ flex:1.2; }
+.s-card .bars .s{ flex:4; }
+.s-card .mini{ display:grid; gap:4px; border:1px solid #eee; border-radius:8px; padding:6px; }
+.s-card .mini .hdr{ text-align:center; border-radius:6px; padding:4px 0; }
+.s-card .mini .btn{ text-align:center; border-radius:6px; padding:4px 0; margin-top:4px; }
+.s-card .badges{ display:flex; gap:6px; margin-top:4px; }
+.badge{ font-size:11px; border-radius:999px; padding:2px 6px; border:1px solid var(--border); }
+.badge.ok{ background:#f3fbf5; border-color:#bfe3c7; }
+.badge.warn{ background:#fff9f2; border-color:#f3d0a9; }

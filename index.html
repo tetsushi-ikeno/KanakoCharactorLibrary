@@ -3,12 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="app-build" content="2025-08-31-01" />
+  <meta name="app-build" content="2025-08-31-02" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>キャラ図鑑</title>
-  <link rel="stylesheet" href="style.css?v=2025-08-31-01" />
+  <link rel="stylesheet" href="style.css?v=2025-08-31-02" />
+      <!-- color UI + color math -->
+    <script src="https://unpkg.com/iro@5.5.2/dist/iro.min.js"></script>
+    <script src="https://unpkg.com/culori@3.3.0/dist/culori.umd.min.js"></script>
+
 </head>
 <body>
   <!-- アプリ全体ラッパ -->
@@ -207,6 +211,25 @@
               </div>
             </div>
           </section>
+<!-- カラーアシスタント（ベース→サジェスト生成） -->
+          <section class="pnm-assistant" aria-label="カラーアシスタント">
+            <div class="assist-left">
+              <h4>ベースをホイールで選ぶ</h4>
+              <div id="baseColorWheel" class="wheel"></div>
+              <div class="lc-controls">
+                <label>明るさ L <input id="baseL" type="range" min="0" max="1" step="0.01"></label>
+                <label>鮮やかさ C <input id="baseC" type="range" min="0" max="0.25" step="0.005"></label>
+              </div>
+              <p class="tip">※ライト基調では L を高め・C を低めが読みやすいです</p>
+            </div>
+
+            <div class="assist-right">
+              <h4>サジェスト（クリックで適用）</h4>
+              <div id="suggestGroups" class="suggest-groups">
+                <!-- JSで 補色 / 分割補色 / トライアド の3グループを生成 -->
+              </div>
+            </div>
+          </section>
 
           <!-- 下段：プレビュー（左＝カード視認性、右＝画面ミニレイアウト） -->
           <section class="pnm-preview">
@@ -256,6 +279,6 @@
   </div>
 
   <!-- 末尾でJS（キャッシュ回避用のビルド番号付き） -->
-  <script src="script.js?v=2025-08-31-01"></script>
+  <script src="script.js?v=2025-08-31-02"></script>
 </body>
 </html>
