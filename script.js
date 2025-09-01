@@ -355,25 +355,41 @@ function normalizeHex(v){
 function getComputedCssVar(name){
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '';
 }
-// --- 外部ライブラリを必要時だけ読み込む ---
-function loadScriptOnce(src) {
-  return new Promise((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      // すでに読み込み済みならOK
-      return resolve();
+function waitForGlobal(globalName, timeoutMs = 8000){
+  return new Promise((resolve, reject)=>{
+    if (window[globalName]) return resolve();
+    const started = Date.now();
+    const id = setInterval(()=>{
+      if (window[globalName]) { clearInterval(id); resolve(); }
+      else if (Date.now() - started > timeoutMs) { clearInterval(id); reject(new Error(`Timeout waiting for ${globalName}`)); }
+    }, 50);
+  });
+}
+
+function loadScriptAndWait(src, globalName){
+  return new Promise((resolve, reject)=>{
+    // 同じsrcの<script>が既にあれば、“その読み終わり”を待つ
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing){
+      // 既にグローバルが立っていれば即resolve、まだなら load/error を待つ
+      if (window[globalName]) return resolve();
+      existing.addEventListener('load',  () => resolve(), { once:true });
+      existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once:true });
+      return;
     }
+    // 新規に読み込む
     const s = document.createElement('script');
     s.src = src; s.async = true;
     s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load ' + src));
+    s.onerror = () => reject(new Error(`Failed to load ${src}`));
     document.head.appendChild(s);
   });
 }
-async function ensureColorLibs() {
-  if (!window.culori) await loadScriptOnce('https://unpkg.com/culori@3.3.0/dist/culori.umd.min.js');
-  if (!window.iro)    await loadScriptOnce('https://unpkg.com/iro@5.5.2/dist/iro.min.js');
+async function ensureScript(src, globalName){
+  if (window[globalName]) return;
+  await loadScriptAndWait(src, globalName);   // <script> の load を待つ
+  await waitForGlobal(globalName);            // グローバルが生えるまで念のため待つ
 }
-
 async function openPaletteNewModal(){
   await ensureColorLibs(); // ここで culori / iro を保証
 
